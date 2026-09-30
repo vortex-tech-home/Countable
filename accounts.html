@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accounts & Vendors</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-init.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        body { font-family: 'Public Sans', sans-serif; background-color: #FDFBF7; }
+        .card-hover { transition: transform 0.3s ease, box-shadow 0.3s ease; border-radius: 16px; border: 1px solid rgba(197, 160, 89, 0.15); }
+        .card-hover:hover { box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08); }
+        .text-gold { color: #C5A059; }
+        .bg-gold-subtle { background-color: rgba(197, 160, 89, 0.1); }
+        .form-control, .form-select { background: #F8F9FA; border: 1px solid #EAE0D5; padding: 10px 15px; border-radius: 10px; font-weight: 500; transition: 0.2s; }
+        .form-control:focus, .form-select:focus { background: #FFF; box-shadow: 0 0 0 4px rgba(197, 160, 89, 0.15); border-color: #C5A059; outline: none; }
+        .nav-pills .nav-link { color: #888; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; font-size: 0.8rem; border-radius: 30px; padding: 10px 20px; transition: 0.2s; cursor: pointer; }
+        .nav-pills .nav-link.active { background-color: #2C2C2C; color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .account-item { padding: 15px; border-radius: 12px; cursor: pointer; border: 1px solid transparent; transition: 0.2s; background: white; margin-bottom: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .account-item:hover { border-color: #C5A059; transform: translateY(-2px); }
+        .account-item.active { background: #2C2C2C; color: white !important; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .account-item.active .acc-name { color: white !important; }
+        .account-item.active .acc-bal { color: #f87171 !important; }
+        .acc-name { font-weight: 700; font-size: 0.95em; color: #2C2C2C; display: block; text-transform: uppercase; letter-spacing: 0.2px; }
+        .acc-bal { font-size: 0.85em; font-weight: 800; color: #dc2626; }
+        .acc-bal.zero { color: #9ca3af; }
+        .acc-bal.credit { color: #198754; }
+        .btn-custom { background-color: #2C2C2C; color: white; border: none; font-weight: 800; padding: 12px 20px; border-radius: 10px; transition: 0.2s; letter-spacing: 0.5px; }
+        .btn-custom:hover { background-color: #1a1a1a; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.15); color: white; }
+        .btn-custom:disabled { opacity: 0.6; transform: none; box-shadow: none; cursor: not-allowed; }
+        .btn-gold { background-color: #C5A059; color: white; }
+        .btn-gold:hover { background-color: #b08d4b; color: white; }
+        .field-label { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #888; letter-spacing: 0.5px; margin-bottom: 6px; display: block; }
+        .action-btn { font-size: 0.8rem; font-weight: 700; padding: 6px 10px; border-radius: 6px; border: 1px solid #EAE0D5; background: #fff; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; }
+        .action-btn:hover { background: #f8f9fa; border-color: #C5A059; }
+        .action-btn.text-danger:hover { border-color: #dc3545; background: #fdf2f2; }
+        .empty-state { display: flex; align-items: center; justify-content: center; height: 100%; color: #9ca3af; font-size: 0.95em; text-align: center; padding: 40px; flex-direction: column; }
+        .pb-name-row { display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .pb-edit-btn { width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; }
+        #pb-name { text-transform: uppercase; }
+
+        /* Directory sidebar is meant to stick while scrolling on desktop/tablet.
+           sticky-md-top is not a real Bootstrap utility, so this rule is what
+           actually makes it work above the md breakpoint. */
+        .sticky-md-top { position: relative; }
+        @media (min-width: 768px) {
+            .sticky-md-top { position: sticky; top: 100px; }
+        }
+
+        @media (max-width: 768px) {
+            .mobile-hide { display: none !important; }
+            .passbook-actions { flex-direction: column; }
+            .passbook-actions button { width: 100%; margin-bottom: 8px; }
+        }
+    </style>
+</head>
+<body>
+
+    <script src="navbar.js"></script>
+
+    <main class="container-fluid py-4 mb-5 d-none" id="admin-content">
+        <div class="row g-4">
+            
+            <!-- LEFT: DIRECTORY -->
+            <div class="col-12 col-lg-4 col-xl-3">
+                <div class="sticky-md-top" style="top: 100px;">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="fw-bold m-0" style="color: #2C2C2C;">Directory</h4>
+                        <button class="btn btn-sm btn-custom admin-only d-none px-3" onclick="openAddAccountModal()">+ NEW</button>
+                    </div>
+
+                    <input type="text" id="account-search" class="form-control mb-3 shadow-sm" placeholder="Search accounts..." onkeyup="filterAccounts()">
+
+                    <ul class="nav nav-pills mb-3 d-flex w-100 gap-2">
+                        <li class="nav-item flex-fill text-center">
+                            <div class="nav-link active w-100 shadow-sm" id="tab-vendors" onclick="switchTab('vendors')">Vendors</div>
+                        </li>
+                        <li class="nav-item flex-fill text-center">
+                            <div class="nav-link w-100 shadow-sm" id="tab-finances" onclick="switchTab('finances')">Finances</div>
+                        </li>
+                    </ul>
+
+                    <div id="account-list" style="max-height: 60vh; overflow-y: auto; padding-right: 5px;">
+                        <div class="empty-state">Loading accounts...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT: PASSBOOK -->
+            <div class="col-12 col-lg-8 col-xl-9">
+                
+                <!-- DEFAULT EMPTY STATE -->
+                <div id="empty-pane" class="card card-hover bg-white border-0 shadow-sm h-100 d-flex justify-content-center align-items-center p-5">
+                    <div class="text-center opacity-50">
+                        <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" class="mb-3">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"></path>
+                        </svg>
+                        <h5 class="fw-bold text-dark">No Account Selected</h5>
+                        <p class="small text-muted">Select an entity from the directory to view its ledger.</p>
+                    </div>
+                </div>
+
+                <!-- ACTIVE PASSBOOK -->
+                <div id="passbook-pane" class="card card-hover bg-white border-0 shadow-sm d-none flex-column overflow-hidden h-100">
+                    <div id="pdf-export-area">
+                        
+                        <div class="p-4 p-md-5 border-bottom bg-light text-center position-relative">
+                            <div class="small fw-bold text-muted text-uppercase mb-2 tracking-wide" id="pb-type" style="letter-spacing: 1px;">Vendor Account</div>
+                            
+                            <div class="pb-name-row mb-1">
+                                <h2 class="fw-bold m-0 text-dark" id="pb-name">Account Name</h2>
+                                <button class="btn btn-sm btn-light border pb-edit-btn no-print admin-only d-none" onclick="editVendorDetails()" title="Edit Account Details">✎</button>
+                            </div>
+                            
+                            <div class="small text-muted fw-semibold mb-4" id="pb-meta">Phone: - | GST: -</div>
+                            
+                            <div class="d-inline-block bg-white px-4 py-3 rounded-4 shadow-sm border" style="border-color: rgba(197, 160, 89, 0.2) !important;">
+                                <div class="small fw-bold text-muted text-uppercase mb-1" style="letter-spacing: 0.5px;">Outstanding Balance</div>
+                                <h2 class="fw-bold m-0 text-danger" style="letter-spacing: -1px;">₹ <span id="pb-bal">0.00</span></h2>
+                            </div>
+                        </div>
+
+                        <div class="p-3 bg-white border-bottom d-flex justify-content-center gap-2 passbook-actions no-print">
+                            <button class="btn btn-custom btn-gold" onclick="openAddBillModal()">+ ADD DUE BILL</button>
+                            <button class="btn btn-custom" onclick="openPayModal()">RECORD PAYMENT</button>
+                            <button class="btn btn-outline-dark fw-bold px-4" id="pdf-btn" style="border-radius: 10px;" onclick="promptPDFDownload()">PDF</button>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table align-middle mb-0 table-hover">
+                                <thead class="bg-light" style="border-top: 1px solid #F0F0F0; border-bottom: 2px solid #EAE0D5;">
+                                    <tr class="small text-muted fw-bold text-uppercase" style="letter-spacing: 0.5px;">
+                                        <th class="ps-4 py-3 border-0">Date</th>
+                                        <th class="py-3 border-0">Details / Ref</th>
+                                        <th class="text-end py-3 border-0 text-success">Dr (Paid)</th>
+                                        <th class="text-end py-3 border-0 text-danger">Cr (Billed)</th>
+                                        <th class="text-end py-3 border-0 text-dark">Balance</th>
+                                        <th class="text-center pe-4 py-3 border-0 no-print admin-only d-none">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pb-history">
+                                    <tr><td colspan="6" class="text-center py-5 text-muted fw-semibold">Select an account to view history.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script src="accounts.js"></script>
+</body>
+</html>

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Login</title>
+    <!-- SYNCHRONOUS CDN LOADING - Fixes all crashes -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-init.js"></script>
+    <style>
+        /* SLEEK MODERN DESIGN */
+        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); display: flex; align-items: center; justify-content: center; height: 100vh; color: #0f172a; }
+        .hidden { display: none !important; }
+
+        /* Glassmorphism Card */
+        .login-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1); border: 1px solid rgba(255, 255, 255, 0.5); width: 100%; max-width: 400px; box-sizing: border-box; transform: translateY(20px); opacity: 0; animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes slideUp { to { transform: translateY(0); opacity: 1; } }
+
+        /* Branding & Logo */
+        .brand-container { text-align: center; margin-bottom: 35px; }
+        .brand-logo { max-width: 80px; margin-bottom: 15px; }
+        .brand-title { font-size: 1.6em; font-weight: 800; margin: 0; color: #0f172a; letter-spacing: -0.5px; }
+        .brand-subtitle { font-size: 0.9em; color: #64748b; margin-top: 5px; font-weight: 500; }
+
+        /* Inputs */
+        .input-group { margin-bottom: 20px; text-align: left; }
+        label { font-weight: 700; font-size: 0.8em; display: block; margin-bottom: 8px; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; }
+        input[type="email"], input[type="password"] { width: 100%; padding: 14px; box-sizing: border-box; border-radius: 10px; border: 1px solid #cbd5e1; background-color: #f8fafc; font-size: 1em; transition: all 0.2s ease; outline: none; color: #0f172a; }
+        input:focus { border-color: #0f172a; background-color: #ffffff; box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.05); }
+
+        /* Remember Me */
+        .remember-row { display: flex; align-items: center; gap: 8px; margin-bottom: 25px; }
+        .remember-row input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: #0f172a; }
+        .remember-row label { margin: 0; text-transform: none; font-size: 0.9em; font-weight: 600; cursor: pointer; letter-spacing: 0; }
+
+        /* Button */
+        button { background-color: #0f172a; color: #ffffff; border: none; font-weight: 700; padding: 16px; border-radius: 10px; width: 100%; font-size: 1em; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 6px rgba(15, 23, 42, 0.2); }
+        button:hover { background-color: #1e293b; transform: translateY(-2px); box-shadow: 0 6px 12px rgba(15, 23, 42, 0.25); }
+        button:disabled { background-color: #94a3b8; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        /* Error Messaging */
+        .error-msg { color: #ef4444; font-size: 0.85em; margin-bottom: 20px; text-align: center; font-weight: 600; display: none; padding: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; }
+
+        /* Initial Loader */
+        .page-loader { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; width: 100vw; position: fixed; top: 0; left: 0; background: #f8fafc; z-index: 9999; }
+        .spinner { border: 4px solid #e2e8f0; border-top: 4px solid #0f172a; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div id="page-loader" class="page-loader">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="login-card hidden" id="login-ui">
+        <div class="brand-container">
+            <svg class="brand-logo" viewBox="0 0 24 24" fill="none" stroke="#0f172a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            <h1 class="brand-title">Firm Access</h1>
+            <p class="brand-subtitle">Sign in to your workspace</p>
+        </div>
+        
+        <form onsubmit="handleLogin(event)">
+            <div class="input-group">
+                <label>Email Address</label>
+                <input type="email" id="email" placeholder="staff@firm.com" autocomplete="email">
+            </div>
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+            </div>
+            <div class="remember-row">
+                <input type="checkbox" id="remember-me">
+                <label for="remember-me">Remember my email</label>
+            </div>
+            <div id="error-box" class="error-msg"></div>
+            <button type="submit" id="login-btn">Sign In</button>
+        </form>
+    </div>
+
+    <script>
+        window.onload = async () => {
+            const savedEmail = localStorage.getItem('shop_saved_email');
+            if (savedEmail) {
+                document.getElementById('email').value = savedEmail;
+                document.getElementById('remember-me').checked = true;
+            }
+
+            // INSTANT EXECUTION: No more waiting in a while loop
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) {
+                window.location.replace('dashboard.html');
+                return; 
+            }
+
+            document.getElementById('page-loader').classList.add('hidden');
+            document.getElementById('login-ui').classList.remove('hidden');
+        };
+
+        async function handleLogin(e) {
+            e.preventDefault(); 
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const rememberMe = document.getElementById('remember-me').checked;
+            const btn = document.getElementById('login-btn');
+            const errorBox = document.getElementById('error-box');
+
+            if (!email || !password) {
+                errorBox.innerText = "Please enter both email and password.";
+                errorBox.style.display = 'block';
+                return;
+            }
+
+            btn.innerText = "Authenticating...";
+            btn.disabled = true;
+            errorBox.style.display = 'none';
+
+            const { data, error } = await supabaseClient.auth.signInWithPassword({
+                email: email,
+                password: password
+            });
+
+            if (error) {
+                errorBox.innerText = error.message;
+                errorBox.style.display = 'block';
+                btn.innerText = "Sign In";
+                btn.disabled = false;
+            } else {
+                if (rememberMe) {
+                    localStorage.setItem('shop_saved_email', email);
+                } else {
+                    localStorage.removeItem('shop_saved_email');
+                }
+                window.location.replace('dashboard.html');
+            }
+        }
+    </script>
+</body>
+</html>

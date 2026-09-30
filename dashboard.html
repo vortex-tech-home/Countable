@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shop Dashboard</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-init.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        body { font-family: 'Public Sans', sans-serif; background-color: #FDFBF7; }
+        .card-hover { transition: transform 0.3s ease, box-shadow 0.3s ease; border-radius: 16px; border: 1px solid rgba(197, 160, 89, 0.15); }
+        .card-hover:hover { transform: translateY(-3px); box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08); }
+        .text-gold { color: #C5A059; }
+        .bg-gold-subtle { background-color: rgba(197, 160, 89, 0.1); }
+        .form-control, .form-select { background: #F8F9FA; border: 1px solid #EAE0D5; padding: 12px 15px; border-radius: 10px; font-weight: 500; transition: 0.2s; }
+        .form-control:focus, .form-select:focus { background: #FFF; box-shadow: 0 0 0 4px rgba(197, 160, 89, 0.15); border-color: #C5A059; outline: none; }
+        .field-label { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #888; letter-spacing: 0.5px; margin-bottom: 6px; display: block; }
+        .btn-check:checked + .btn-outline-dark { background-color: #2C2C2C; border-color: #2C2C2C; color: white; }
+        .btn-check:checked + .btn-outline-primary { background-color: #0d6efd; border-color: #0d6efd; color: white; }
+        .submit-btn { background-color: #2C2C2C; color: white; border: none; font-weight: 800; padding: 14px; border-radius: 10px; transition: 0.2s; letter-spacing: 1px; }
+        .submit-btn:hover { background-color: #1a1a1a; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.15); }
+        .action-btn { font-size: 0.8rem; font-weight: 700; padding: 6px 12px; border-radius: 6px; border: 1px solid #EAE0D5; background: #fff; transition: 0.2s; }
+        .action-btn:hover { background: #f8f9fa; border-color: #C5A059; }
+        .action-btn.text-danger:hover { border-color: #dc3545; background: #fdf2f2; }
+
+        @media (max-width: 768px) {
+            .mobile-hide { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <script> window.APP_VERSION = 'v1.8.1'; </script>
+    <script src="navbar.js"></script>
+
+    <main class="container-fluid py-4 mb-5 position-relative" style="z-index: 10;">
+        
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 pb-3 border-bottom">
+            <div class="mb-3 mb-md-0">
+                <h3 class="fw-bold m-0" style="color: #2C2C2C;">Daybook Terminal</h3>
+                <p class="text-muted small fw-semibold mb-0 mt-1">Record and monitor daily cash flow</p>
+            </div>
+            <div class="d-flex gap-3 align-items-center">
+                <div style="min-width: 150px;">
+                    <div class="field-label mb-1">Active Date</div>
+                    <input type="date" id="active-date" class="form-control fw-bold text-dark shadow-sm border-0 cursor-pointer" onchange="onDateChanged()">
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <!-- PHYSICAL DRAWER -->
+            <div class="col-12 col-xl-3">
+                <div class="card card-hover border-0 shadow-lg h-100" style="background: linear-gradient(135deg, #1C1C1C 0%, #3A3A3A 100%); color: white; border-radius: 20px;">
+                    <div class="card-body p-4 position-relative overflow-hidden">
+                        <div class="d-flex justify-content-between align-items-start mb-2 position-relative" style="z-index: 2;">
+                            <span class="badge bg-gold-subtle text-gold px-3 py-1 rounded-pill fw-bold" style="letter-spacing: 1px; border: 1px solid rgba(197,160,89,0.3);">
+                                🏪 PHYSICAL DRAWER
+                            </span>
+                        </div>
+                        <h1 class="display-5 fw-bold mb-0 text-white mt-2 position-relative" style="z-index: 2;">₹ <span id="display-drawer">0.00</span></h1>
+                        <small class="text-white-50 fw-semibold mt-1 d-block position-relative" style="z-index: 2;">Strictly Cash In minus Cash Out</small>
+                        <div class="position-absolute opacity-10 pe-none" style="z-index: 0; right: -20px; bottom: -20px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" fill="currentColor" viewBox="0 0 16 16"><path d="M1.5 2A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13zM1 3.5a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 .5.5v1H1v-1zm0 2h14v7a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-7z"/></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TOTAL SALES SPLIT -->
+            <div class="col-12 col-xl-3">
+                <div class="card card-hover bg-white h-100 p-0 border-0 shadow-sm d-flex flex-row overflow-hidden" style="border-radius: 20px;">
+                    <div class="flex-fill p-3 p-md-4 border-end bg-light text-center d-flex flex-column justify-content-center">
+                        <div class="field-label mb-2">Cash Sales</div>
+                        <h4 class="fw-bold text-dark m-0 text-truncate">₹ <span id="display-sales-cash">0.00</span></h4>
+                    </div>
+                    <div class="flex-fill p-3 p-md-4 text-center d-flex flex-column justify-content-center">
+                        <div class="field-label mb-2">UPI Sales</div>
+                        <h4 class="fw-bold text-primary m-0 text-truncate">₹ <span id="display-sales-upi">0.00</span></h4>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-6 col-xl-2">
+                <div class="card card-hover bg-white h-100 p-3 p-md-4 border-0 shadow-sm d-flex flex-column justify-content-center" style="border-radius: 20px;">
+                    <div class="field-label">Total Expense</div>
+                    <h4 class="fw-bold text-danger m-0 text-truncate">₹ <span id="display-expense">0.00</span></h4>
+                </div>
+            </div>
+
+            <div class="col-6 col-xl-4">
+                <div class="card card-hover bg-white h-100 p-3 p-md-4 border-0 shadow-sm d-flex flex-column justify-content-center" style="border-bottom: 4px solid #C5A059 !important; border-radius: 20px;">
+                    <div class="field-label">Unified Cash Ledger</div>
+                    <h4 class="fw-bold text-dark m-0 text-truncate">₹ <span id="display-vault">0.00</span></h4>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-5">
+            <div class="col-md-6">
+                <div class="card card-hover bg-white border-0 shadow-sm p-4 h-100">
+                    <h5 class="fw-bold text-success mb-4 text-uppercase" style="letter-spacing: 1px;">+ Record Income</h5>
+                    
+                    <div class="btn-group w-100 mb-4 shadow-sm" role="group">
+                        <input type="radio" class="btn-check" name="inc_method" id="inc_cash" value="CASH" checked onchange="document.getElementById('income-method').value='CASH'">
+                        <label class="btn btn-outline-dark fw-bold py-2" for="inc_cash">CASH</label>
+                        <input type="radio" class="btn-check" name="inc_method" id="inc_upi" value="UPI" onchange="document.getElementById('income-method').value='UPI'">
+                        <label class="btn btn-outline-primary fw-bold py-2" for="inc_upi">UPI / DIGITAL</label>
+                    </div>
+                    <input type="hidden" id="income-method" value="CASH">
+
+                    <label class="field-label">Category</label>
+                    <select id="income-category" class="form-select mb-4">
+                        <option value="SALES">Sales (General)</option>
+                        <option value="SERVICE">Service</option>
+                        <option value="UNBILLED">Unbilled Sales</option>
+                        <option value="OTHER">Other</option>
+                    </select>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-5">
+                            <label class="field-label">Amount (₹)</label>
+                            <input type="number" id="income-amount" class="form-control fw-bold text-success fs-5" placeholder="0.00">
+                        </div>
+                        <div class="col-md-7">
+                            <label class="field-label">Details / Ref</label>
+                            <input type="text" id="income-note" class="form-control fs-6 mt-md-1" placeholder="Optional notes">
+                        </div>
+                    </div>
+                    <button class="submit-btn w-100 mt-auto" onclick="submitIncome()">POST INCOME</button>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card card-hover bg-white border-0 shadow-sm p-4 h-100">
+                    <h5 class="fw-bold text-danger mb-4 text-uppercase" style="letter-spacing: 1px;">- Record Expense</h5>
+                    
+                    <div class="btn-group w-100 mb-4 shadow-sm" role="group">
+                        <input type="radio" class="btn-check" name="exp_method" id="exp_cash" value="CASH" checked onchange="document.getElementById('expense-method').value='CASH'">
+                        <label class="btn btn-outline-dark fw-bold py-2" for="exp_cash">CASH</label>
+                        <input type="radio" class="btn-check" name="exp_method" id="exp_upi" value="UPI" onchange="document.getElementById('expense-method').value='UPI'">
+                        <label class="btn btn-outline-primary fw-bold py-2" for="exp_upi">UPI / DIGITAL</label>
+                    </div>
+                    <input type="hidden" id="expense-method" value="CASH">
+
+                    <label class="field-label">Category</label>
+                    <select id="expense-category" class="form-select mb-4" onchange="toggleExpenseFields()">
+                        <option value="none" selected disabled>Select Class...</option>
+                        <option value="vendor">Vendor / Supplier Payout</option>
+                        <option value="staff">Staff Wage / Advance</option>
+                        <option value="finance">Finance / Kuri EMI</option>
+                        <option value="generic">General Overhead</option>
+                    </select>
+
+                    <div id="vendor-group" class="mb-4 d-none">
+                        <label class="field-label">Select Vendor</label>
+                        <select id="vendor-select" class="form-select"></select>
+                    </div>
+                    <div id="staff-group" class="mb-4 d-none">
+                        <label class="field-label">Select Staff</label>
+                        <select id="staff-select" class="form-select"></select>
+                    </div>
+                    <div id="finance-group" class="mb-4 d-none">
+                        <label class="field-label">Select Account</label>
+                        <select id="finance-select" class="form-select"></select>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-5">
+                            <label class="field-label">Amount (₹)</label>
+                            <input type="number" id="expense-amount" class="form-control fw-bold text-danger fs-5" placeholder="0.00">
+                        </div>
+                        <div class="col-md-7">
+                            <label class="field-label">Details / Ref</label>
+                            <input type="text" id="expense-note" class="form-control fs-6 mt-md-1" placeholder="Optional notes">
+                        </div>
+                    </div>
+                    <button class="submit-btn w-100 mt-auto" onclick="submitExpense()">POST EXPENSE</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card card-hover bg-white border-0 shadow-sm overflow-hidden">
+            <div class="p-4 border-bottom d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold m-0" style="color: #2C2C2C;">Daily Ledger Output</h5>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table align-middle mb-0 table-hover">
+                    <thead class="bg-light" style="border-top: 1px solid #F0F0F0; border-bottom: 2px solid #EAE0D5;">
+                        <tr class="small text-muted fw-bold text-uppercase" style="letter-spacing: 0.5px;">
+                            <th class="ps-4 py-3 border-0 mobile-hide">Time</th>
+                            <th class="py-3 border-0">Classification / Details</th>
+                            <th class="text-center py-3 border-0">Mode</th>
+                            <th class="text-end py-3 border-0 text-success">Credit (IN)</th>
+                            <th class="text-end py-3 border-0 text-danger">Debit (OUT)</th>
+                            <th class="text-end pe-4 py-3 border-0 mobile-hide text-gold">Drawer Balance</th>
+                            <th id="edit-col-header" class="text-center py-3 border-0 d-none admin-only">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="txn-body">
+                        <tr><td colspan="7" class="text-center py-5 text-muted fw-semibold">Loading ledger...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        let currentShopId = null;
+        let isAdmin = false;
+
+        window.onload = async () => {
+            document.getElementById('active-date').valueAsDate = new Date();
+            
+            try {
+                const { data: userData } = await supabaseClient.auth.getUser();
+                if (userData && userData.user) {
+                    const { data: profile } = await supabaseClient.from('user_profiles').select('role, shop_id').eq('id', userData.user.id).single();
+                    if (profile) {
+                        currentShopId = profile.shop_id;
+                        isAdmin = (profile.role === 'admin');
+                        
+                        if (isAdmin) {
+                            document.getElementById('edit-col-header').classList.remove('d-none');
+                            document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('d-none'));
+                        }
+
+                        await loadDropdowns(currentShopId);
+                        await loadDashboardData();
+                    }
+                }
+            } catch (err) {
+                console.error("Dashboard Init Error:", err);
+            }
+        };
+
+        function onDateChanged() { loadDashboardData(); }
+
+        function toggleExpenseFields() {
+            const cat = document.getElementById('expense-category').value;
+            document.getElementById('vendor-group').classList.add('d-none');
+            document.getElementById('staff-group').classList.add('d-none');
+            document.getElementById('finance-group').classList.add('d-none');
+            
+            if (cat === 'vendor') document.getElementById('vendor-group').classList.remove('d-none');
+            if (cat === 'staff') document.getElementById('staff-group').classList.remove('d-none');
+            if (cat === 'finance') document.getElementById('finance-group').classList.remove('d-none');
+        }
+
+        async function loadDropdowns(shopId) {
+            const { data: vendors } = await supabaseClient.from('vendors').select('id, name').eq('shop_id', shopId).or('account_type.eq.vendor,account_type.is.null');
+            const vSelect = document.getElementById('vendor-select');
+            vSelect.innerHTML = '<option value="" selected disabled>Choose Vendor...</option>';
+            if (vendors) vendors.forEach(v => vSelect.innerHTML += `<option value="${v.id}">${v.name}</option>`);
+
+            const { data: staff } = await supabaseClient.from('staff').select('id, name').eq('shop_id', shopId);
+            const sSelect = document.getElementById('staff-select');
+            sSelect.innerHTML = '<option value="" selected disabled>Choose Staff...</option>';
+            if (staff) staff.forEach(s => sSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`);
+
+            const { data: finances } = await supabaseClient.from('vendors').select('id, name').eq('shop_id', shopId).eq('account_type', 'finance');
+            const fSelect = document.getElementById('finance-select');
+            fSelect.innerHTML = '<option value="" selected disabled>Choose Finance / Kuri...</option>';
+            if (finances) finances.forEach(f => fSelect.innerHTML += `<option value="${f.id}">${f.name}</option>`);
+        }
+
+        function getLocalDayBounds(dateString) {
+            const start = new Date(`${dateString}T00:00:00`).toISOString();
+            const end = new Date(`${dateString}T23:59:59.999`).toISOString();
+            return { start, end };
+        }
+
+        async function loadDashboardData() {
+            if (!currentShopId) return;
+            const selectedDate = document.getElementById('active-date').value;
+            if (!selectedDate) return;
+
+            const { start, end } = getLocalDayBounds(selectedDate);
+
+            const { data: shopData } = await supabaseClient.from('shops').select('master_ledger_balance').eq('id', currentShopId).single();
+            document.getElementById('display-vault').innerText = parseFloat(shopData?.master_ledger_balance || 0).toFixed(2);
+
+            const { data: txns, error } = await supabaseClient.from('daily_transactions')
+                .select(`*, vendors ( name ), staff ( name )`)
+                .eq('shop_id', currentShopId)
+                .gte('created_at', start)
+                .lte('created_at', end)
+                .order('created_at', { ascending: true }); 
+            
+            if (error) return console.error("Fetch Error:", error);
+
+            let cashSales = 0, upiSales = 0, totalExpense = 0, drawerCash = 0;
+            let runningCashBalance = 0;
+            const processedTxns = [];
+
+            if (txns && txns.length > 0) {
+                txns.forEach(txn => {
+                    const amt = parseFloat(txn.amount);
+                    const isLegacySweep = txn.reference_note && txn.reference_note.includes('Transferred to Master Vault');
+
+                    if (txn.transaction_type === 'INCOME') {
+                        if (txn.payment_method === 'CASH') cashSales += amt;
+                        else upiSales += amt;
+                    }
+                    if (txn.transaction_type === 'EXPENSE' && !isLegacySweep) totalExpense += amt;
+
+                    if (txn.payment_method === 'CASH') {
+                        if (txn.transaction_type === 'INCOME') { drawerCash += amt; runningCashBalance += amt; }
+                        if (txn.transaction_type === 'EXPENSE') { drawerCash -= amt; runningCashBalance -= amt; }
+                    }
+
+                    let mainGroup = (txn.category || 'OTHER').toUpperCase();
+                    let partyName = txn.reference_note || '-';
+                    
+                    if (txn.category === 'vendor' && txn.vendors) { mainGroup = 'VENDOR PAYOUT'; partyName = txn.vendors.name; }
+                    else if (txn.category === 'finance' && txn.vendors) { mainGroup = 'FINANCE / EMI'; partyName = txn.vendors.name; }
+                    else if (txn.category === 'staff' && txn.staff) { mainGroup = 'STAFF WAGE'; partyName = txn.staff.name; }
+                    
+                    let refNote = txn.reference_note ? `<div class="text-muted mt-1" style="font-size: 0.75rem;">Ref: ${txn.reference_note}</div>` : '';
+                    if (partyName === txn.reference_note) refNote = '';
+
+                    // HIDE LEGACY SWEEPS FROM THE DASHBOARD
+                    if (!isLegacySweep) {
+                        processedTxns.push({
+                            ...txn,
+                            amt: amt,
+                            mainGroup: mainGroup,
+                            partyName: partyName,
+                            refNote: refNote,
+                            currentBalance: runningCashBalance
+                        });
+                    }
+                });
+            }
+
+            processedTxns.reverse();
+
+            const tbody = document.getElementById('txn-body');
+            tbody.innerHTML = '';
+
+            if (processedTxns.length > 0) {
+                processedTxns.forEach(txn => {
+                    const timeStr = new Date(txn.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+                    const isIncome = txn.transaction_type === 'INCOME';
+                    
+                    const creditHtml = isIncome ? `₹ ${txn.amt.toFixed(2)}` : '-';
+                    const debitHtml = !isIncome ? `₹ ${txn.amt.toFixed(2)}` : '-';
+                    
+                    const badgeHtml = txn.payment_method === 'UPI' 
+                        ? `<span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">UPI</span>` 
+                        : `<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1">CASH</span>`;
+
+                    let adminEditBtn = isAdmin ? `
+                        <td class="text-center admin-only align-middle">
+                            <div class="d-flex justify-content-center gap-2">
+                                <button class="action-btn text-dark" onclick="editTransaction('${txn.id}', ${txn.amt})" title="Edit"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
+                                <button class="action-btn text-danger" onclick="deleteTransaction('${txn.id}')" title="Delete"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+                            </div>
+                        </td>
+                    ` : '';
+                    
+                    tbody.innerHTML += `
+                        <tr style="transition: background 0.2s; border-bottom: 1px solid #F8F9FA;" onmouseover="this.style.background='#FDFBF7'" onmouseout="this.style.background='transparent'">
+                            <td class="ps-4 py-3 mobile-hide text-muted fw-semibold small">${timeStr}</td>
+                            <td class="py-3">
+                                <div class="fw-bold text-dark small">${txn.mainGroup}</div>
+                                <div class="fw-semibold text-dark mt-1" style="font-size: 0.85rem;">${txn.partyName}</div>
+                                ${txn.refNote}
+                            </td>
+                            <td class="text-center py-3">${badgeHtml}</td>
+                            <td class="text-end py-3 fw-bold text-success fs-6">${creditHtml}</td>
+                            <td class="text-end py-3 fw-bold text-danger fs-6">${debitHtml}</td>
+                            <td class="text-end pe-4 py-3 fw-bold mobile-hide text-gold">
+                                ${txn.payment_method === 'CASH' ? '₹ ' + txn.currentBalance.toFixed(2) : '<span class="text-muted fw-normal small">DIGI</span>'}
+                            </td>
+                            ${adminEditBtn}
+                        </tr>
+                    `;
+                });
+            } else {
+                const colSpanCount = isAdmin ? 7 : 6;
+                tbody.innerHTML = `<tr><td colspan="${colSpanCount}" class="text-center py-5 text-muted fw-semibold"><div class="fs-4 opacity-50 mb-2">📋</div>No transactions logged today.</td></tr>`;
+            }
+
+            document.getElementById('display-sales-cash').innerText = cashSales.toFixed(2);
+            document.getElementById('display-sales-upi').innerText = upiSales.toFixed(2);
+            document.getElementById('display-expense').innerText = totalExpense.toFixed(2);
+            document.getElementById('display-drawer').innerText = drawerCash.toFixed(2);
+        }
+
+        function getSubmissionTimestamp() {
+            const dateVal = document.getElementById('active-date').value;
+            const now = new Date();
+            const localString = `${dateVal}T${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+            return new Date(localString).toISOString(); 
+        }
+
+        async function submitIncome() { 
+            if(!currentShopId) return;
+            const category = document.getElementById('income-category').value;
+            const method = document.getElementById('income-method').value;
+            const amount = parseFloat(document.getElementById('income-amount').value);
+            const note = document.getElementById('income-note').value;
+            
+            if(!amount || amount <= 0) return Swal.fire('Invalid Amount', 'Please enter a valid amount.', 'error');
+
+            const { error } = await supabaseClient.from('daily_transactions').insert([{
+                shop_id: currentShopId, 
+                transaction_type: 'INCOME', 
+                category: category, 
+                payment_method: method, 
+                amount: amount,
+                reference_note: note,
+                status: 'open',
+                created_at: getSubmissionTimestamp()
+            }]);
+
+            if (error) return Swal.fire('Error', error.message, 'error');
+            
+            document.getElementById('income-amount').value = '';
+            document.getElementById('income-note').value = '';
+            Swal.fire({ title: 'Logged!', icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
+            await loadDashboardData();
+        }
+
+        async function submitExpense() { 
+            if(!currentShopId) return;
+            const category = document.getElementById('expense-category').value;
+            const method = document.getElementById('expense-method').value;
+            const amount = parseFloat(document.getElementById('expense-amount').value);
+            const note = document.getElementById('expense-note').value;
+            
+            if(category === 'none') return Swal.fire('Missing Category', 'Please select an expense class.', 'warning');
+            if(!amount || amount <= 0) return Swal.fire('Invalid Amount', 'Please enter a valid amount.', 'error');
+
+            let vendor_id = null, staff_id = null;
+            if (category === 'vendor') {
+                vendor_id = document.getElementById('vendor-select').value;
+                if (!vendor_id) return Swal.fire('Missing Vendor', 'Please select a vendor.', 'warning');
+            } else if (category === 'staff') {
+                staff_id = document.getElementById('staff-select').value;
+                if (!staff_id) return Swal.fire('Missing Staff', 'Please select a staff member.', 'warning');
+            } else if (category === 'finance') {
+                vendor_id = document.getElementById('finance-select').value; 
+                if (!vendor_id) return Swal.fire('Missing Finance Account', 'Please select a Finance / Kuri account.', 'warning');
+            }
+
+            const { error: insertErr } = await supabaseClient.from('daily_transactions').insert([{
+                shop_id: currentShopId, 
+                transaction_type: 'EXPENSE', 
+                category: category, 
+                payment_method: method, 
+                amount: amount, 
+                reference_note: note, 
+                vendor_id: vendor_id, 
+                staff_id: staff_id,
+                status: 'open',
+                created_at: getSubmissionTimestamp()
+            }]);
+
+            if (insertErr) return Swal.fire('Ledger Error', insertErr.message, 'error');
+            
+            document.getElementById('expense-amount').value = '';
+            document.getElementById('expense-note').value = '';
+            Swal.fire({ title: 'Logged!', icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
+            await loadDashboardData();
+        }
+
+        async function editTransaction(txnId, currentAmount) {
+            const { value: newAmountStr } = await Swal.fire({
+                title: 'Modify Transaction Amount',
+                input: 'number',
+                inputValue: currentAmount,
+                showCancelButton: true,
+                confirmButtonColor: '#2C2C2C',
+                confirmButtonText: 'Update'
+            });
+
+            if (!newAmountStr) return; 
+            const newAmount = parseFloat(newAmountStr);
+            if (isNaN(newAmount) || newAmount <= 0) return Swal.fire('Error', 'Invalid amount.', 'error');
+            if (newAmount - currentAmount === 0) return; 
+
+            const { error } = await supabaseClient.from('daily_transactions').update({ amount: newAmount }).eq('id', txnId);
+            if (error) return Swal.fire('Database Error', error.message, 'error');
+
+            Swal.fire({ title: 'Updated!', icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
+            await loadDashboardData();
+        }
+
+        async function deleteTransaction(txnId) {
+            const result = await Swal.fire({
+                title: 'Wipe Record?',
+                text: "Associated balances will be reversed automatically by the database.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#2C2C2C',
+                confirmButtonText: 'Yes, Delete'
+            });
+
+            if (result.isConfirmed) {
+                const { error: delError } = await supabaseClient.from('daily_transactions').delete().eq('id', txnId);
+                if (delError) return Swal.fire('Error', delError.message, 'error');
+                
+                Swal.fire({ title: 'Deleted', icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
+                await loadDashboardData();
+            }
+        }
+    </script>
+</body>
+</html>
