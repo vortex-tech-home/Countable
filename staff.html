@@ -2,141 +2,495 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Staff Management</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Enterprise Staff & Attendance</title>
     
-    <!-- BOOTSTRAP 5 & GOOGLE FONTS -->
-    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
-    <!-- SYNCHRONOUS SUPABASE CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-init.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
-        body { font-family: 'Public Sans', sans-serif; background-color: #FDFBF7; }
-        
-        .card-hover { transition: transform 0.3s ease, box-shadow 0.3s ease; border-radius: 16px; border: 1px solid rgba(197, 160, 89, 0.15); }
-        .card-hover:hover { box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08); }
-        
-        .text-gold { color: #C5A059; }
-        
-        .form-control, .form-select { background: #F8F9FA; border: 1px solid #EAE0D5; padding: 10px 15px; border-radius: 10px; font-weight: 500; transition: 0.2s; }
-        .form-control:focus, .form-select:focus { background: #FFF; box-shadow: 0 0 0 4px rgba(197, 160, 89, 0.15); border-color: #C5A059; outline: none; }
-        
-        .staff-item { padding: 15px; border-radius: 12px; cursor: pointer; border: 1px solid transparent; transition: 0.2s; background: white; margin-bottom: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); font-weight: 600; color: #2C2C2C; }
-        .staff-item:hover { border-color: #C5A059; transform: translateY(-2px); }
-        .staff-item.active { background: #2C2C2C; color: white !important; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        
-        .btn-custom { background-color: #2C2C2C; color: white; border: none; font-weight: 800; padding: 10px 20px; border-radius: 10px; transition: 0.2s; letter-spacing: 0.5px; }
-        .btn-custom:hover { background-color: #1a1a1a; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.15); color: white; }
+        :root {
+            --bg-color: #f3f4f6;
+            --surface: #ffffff;
+            --border: #d1d5db;
+            --border-light: #e5e7eb;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            --primary-dark: #0f172a;
+            --credit: #16a34a;
+            --debit: #dc2626;
+            --warning: #d97706;
+            --radius: 6px;
+        }
 
-        /* CALENDAR GRID */
-        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-top: 15px; }
-        .cal-day-header { text-align: center; font-size: 0.75em; font-weight: 800; color: #888; text-transform: uppercase; }
-        .cal-cell { aspect-ratio: 1; border-radius: 10px; border: 2px solid #f1f5f9; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1em; cursor: pointer; user-select: none; transition: 0.15s; background: #ffffff; color: #94a3b8; }
-        .cal-cell.empty { border: none; background: transparent; cursor: default; }
-        .cal-cell:not(.empty):hover { border-color: #C5A059; color: #C5A059; }
+        body { 
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif; 
+            background-color: var(--bg-color); 
+            color: var(--text-main);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
 
-        /* STATES */
-        .state-FULL { background: #10b981; border-color: #10b981; color: white !important; }
-        .state-LEAVE { background: #ef4444; border-color: #ef4444; color: white !important; }
-        .state-HALF { background: #f59e0b; border-color: #f59e0b; color: white !important; }
+        .fin-math {
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.02em;
+        }
 
-        .empty-state { display: flex; align-items: center; justify-content: center; height: 100%; color: #9ca3af; font-size: 0.95em; text-align: center; padding: 40px; flex-direction: column; }
+        /* --- Enterprise Containers --- */
+        .ent-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .ent-header-dark {
+            background: var(--primary-dark);
+            color: white;
+            border: 1px solid var(--primary-dark);
+        }
+
+        .ent-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .ent-label-light { color: #94a3b8; }
+
+        /* --- Form Controls --- */
+        .form-control, .form-select {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-main);
+            transition: none;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-dark);
+            box-shadow: 0 0 0 1px var(--primary-dark);
+            outline: none;
+        }
+
+        /* --- Directory List --- */
+        .staff-item {
+            padding: 12px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .staff-item:hover {
+            background: #f9fafb;
+            border-color: #9ca3af;
+        }
+        .staff-item.active {
+            background: var(--primary-dark);
+            border-color: var(--primary-dark);
+            color: #ffffff;
+        }
+        .staff-name {
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
+        .staff-sub {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        .staff-item.active .staff-sub { color: #94a3b8; }
+
+        /* --- Buttons --- */
+        .ent-btn {
+            background-color: var(--primary-dark);
+            color: white;
+            border: 1px solid var(--primary-dark);
+            font-weight: 700;
+            font-size: 0.78rem;
+            padding: 9px 14px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .ent-btn:hover { background-color: #000; color: white; }
+        .ent-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .ent-btn-success {
+            background-color: var(--credit);
+            color: white;
+            border: 1px solid var(--credit);
+            font-weight: 700;
+            font-size: 0.75rem;
+            padding: 6px 12px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .ent-btn-success:hover { background-color: #15803d; color: white; }
+
+        .action-btn {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text-main);
+        }
+        .action-btn:hover { background: var(--bg-color); }
+        .action-btn.danger { color: var(--debit); }
+        .action-btn.danger:hover { background: #fef2f2; border-color: var(--debit); }
+
+        /* --- Enterprise Calendar Grid --- */
+        .cal-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+        }
+        .cal-day-header {
+            text-align: center;
+            font-size: 0.68rem;
+            font-weight: 800;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding-bottom: 6px;
+        }
+        .cal-cell {
+            aspect-ratio: 1;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            user-select: none;
+            background: var(--surface);
+            color: var(--text-main);
+            position: relative;
+        }
+        .cal-cell.empty {
+            border: none;
+            background: transparent;
+            cursor: default;
+        }
+        .cal-cell:not(.empty):hover {
+            border-color: var(--primary-dark);
+        }
+        .cal-status-tag {
+            font-size: 0.55rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            margin-top: 2px;
+            opacity: 0.85;
+        }
+
+        /* Attendance States */
+        .state-FULL {
+            background: #ecfdf3 !important;
+            border-color: var(--credit) !important;
+            color: var(--credit) !important;
+        }
+        .state-HALF {
+            background: #fffbeb !important;
+            border-color: var(--warning) !important;
+            color: var(--warning) !important;
+        }
+        .state-LEAVE {
+            background: #fef2f2 !important;
+            border-color: var(--debit) !important;
+            color: var(--debit) !important;
+        }
+
+        /* --- Segmented Control --- */
+        .segmented {
+            display: flex;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+            background: var(--bg-color);
+        }
+        .segmented .btn-check + label {
+            flex: 1;
+            padding: 8px 10px;
+            margin: 0;
+            font-size: 0.73rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            text-align: center;
+            cursor: pointer;
+            border-right: 1px solid var(--border);
+        }
+        .segmented .btn-check + label:last-child { border-right: none; }
+        .segmented .btn-check:checked + label {
+            background: var(--primary-dark);
+            color: #ffffff;
+        }
+
+        /* --- Table Strict --- */
+        .ent-table { font-size: 0.8125rem; margin: 0; }
+        .ent-table thead th {
+            background: var(--bg-color);
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            border-bottom: 2px solid var(--border) !important;
+            padding: 10px 14px;
+        }
+        .ent-table td {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border-light);
+            vertical-align: middle;
+        }
+
+        .badge-mode {
+            font-size: 0.65rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid var(--border);
+        }
+
+        .empty-state {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-align: center;
+            padding: 40px 20px;
+            flex-direction: column;
+        }
+
+        /* --- Enterprise SweetAlert2 Modal Overrides --- */
+        .swal2-popup {
+            font-family: 'Plus Jakarta Sans', sans-serif !important;
+            border-radius: 6px !important;
+            border: 1px solid var(--border) !important;
+            padding: 1.5rem !important;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+        }
+        .swal2-title {
+            font-size: 1.1rem !important;
+            font-weight: 800 !important;
+            color: var(--text-main) !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.04em !important;
+            padding: 0 0 10px 0 !important;
+            border-bottom: 1px solid var(--border-light);
+            margin-bottom: 16px !important;
+            text-align: left !important;
+        }
+        .swal2-html-container {
+            margin: 0 !important;
+            padding: 0 !important;
+            text-align: left !important;
+            overflow-x: hidden !important;
+        }
+        .swal2-actions {
+            margin-top: 1.25rem !important;
+            width: 100% !important;
+            justify-content: flex-end !important;
+            gap: 8px !important;
+        }
+        .swal2-styled.swal2-confirm {
+            background-color: var(--primary-dark) !important;
+            border-radius: 4px !important;
+            font-size: 0.78rem !important;
+            font-weight: 700 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.06em !important;
+            padding: 9px 18px !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+        }
+        .swal2-styled.swal2-cancel {
+            background-color: var(--surface) !important;
+            color: var(--text-main) !important;
+            border: 1px solid var(--border) !important;
+            border-radius: 4px !important;
+            font-size: 0.78rem !important;
+            font-weight: 700 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.06em !important;
+            padding: 9px 16px !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+        }
+
+        .sticky-sidebar { position: relative; }
+        @media (min-width: 992px) {
+            .sticky-sidebar { position: sticky; top: 90px; }
+        }
 
         @media (max-width: 768px) {
-            .sticky-md-top { position: relative !important; z-index: 1; }
-            .cal-cell { font-size: 1.1em; border-radius: 8px; } 
+            .cal-cell { font-size: 0.85rem; }
+            .cal-status-tag { font-size: 0.5rem; }
         }
     </style>
 </head>
 <body>
 
+    <script> window.APP_VERSION = 'v1.9.2'; </script>
     <script src="navbar.js"></script>
 
-    <main class="container-fluid py-4 mb-5 d-none" id="admin-content">
+    <main class="container-fluid py-4 mb-5 d-none" id="admin-content" style="max-width: 1280px;">
         
+        <!-- Header Section -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4 pb-3 border-bottom border-secondary-subtle">
+            <div>
+                <h4 class="fw-bold m-0 text-dark" style="letter-spacing: -0.02em;">Staff & Payroll Attendance</h4>
+                <p class="text-muted small fw-medium mb-0 mt-1">Track monthly attendance logs and daily wage disbursements</p>
+            </div>
+        </div>
+
         <div class="row g-4">
             
-            <!-- LEFT: DIRECTORY -->
+            <!-- LEFT: STAFF DIRECTORY -->
             <div class="col-12 col-lg-4 col-xl-3">
-                <div class="sticky-md-top" style="top: 100px;">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h4 class="fw-bold m-0" style="color: #2C2C2C;">Staff Team</h4>
-                        <button class="btn btn-sm btn-custom px-3" onclick="addNewStaff()">+ NEW</button>
+                <div class="sticky-sidebar ent-card p-3">
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                        <span class="ent-label m-0" style="color: var(--text-main);">
+                            Staff Roster (<span id="staff-count">0</span>)
+                        </span>
+                        <button class="ent-btn py-1 px-2" style="font-size: 0.7rem;" onclick="addNewStaff()">+ Add Staff</button>
                     </div>
 
-                    <div id="staff-list" style="max-height: 70vh; overflow-y: auto; padding-right: 5px;">
-                        <div class="empty-state">Loading staff...</div>
+                    <input type="text" id="staff-search" class="form-control mb-3" placeholder="Filter staff..." oninput="renderStaffList()">
+
+                    <div id="staff-list" style="max-height: 65vh; overflow-y: auto; padding-right: 2px;">
+                        <div class="empty-state">Loading roster...</div>
                     </div>
                 </div>
             </div>
 
-            <!-- RIGHT: DASHBOARD -->
+            <!-- RIGHT: STAFF TERMINAL -->
             <div class="col-12 col-lg-8 col-xl-9">
                 
                 <!-- DEFAULT EMPTY STATE -->
-                <div id="empty-pane" class="card card-hover bg-white border-0 shadow-sm h-100 d-flex justify-content-center align-items-center p-5">
-                    <div class="text-center opacity-50">
-                        <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" class="mb-3">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                        </svg>
-                        <h5 class="fw-bold text-dark">No Staff Selected</h5>
-                        <p class="small text-muted">Select a team member to manage attendance and wages.</p>
+                <div id="empty-pane" class="ent-card h-100 d-flex justify-content-center align-items-center p-5" style="min-height: 420px;">
+                    <div class="text-center">
+                        <div class="ent-label mb-1">Attendance & Payroll Terminal</div>
+                        <h6 class="fw-bold text-dark mb-1">No Team Member Selected</h6>
+                        <p class="small text-muted m-0">Select a staff member from the roster to log attendance or record wages.</p>
                     </div>
                 </div>
 
                 <!-- ACTIVE STAFF DASHBOARD -->
-                <div id="dashboard-pane" class="card card-hover bg-white border-0 shadow-sm d-none flex-column overflow-hidden h-100">
+                <div id="dashboard-pane" class="ent-card d-none flex-column overflow-hidden h-100">
                     
-                    <div class="p-4 p-md-5 border-bottom bg-light d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                    <!-- Top Dark Header -->
+                    <div class="ent-header-dark p-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
                         <div>
-                            <div class="small fw-bold text-muted text-uppercase mb-1 tracking-wide" style="letter-spacing: 1px;">Team Member</div>
-                            <h2 class="fw-bold m-0 text-dark" id="selected-staff-name">Name</h2>
+                            <div class="ent-label ent-label-light mb-1">Active Team Member</div>
+                            <div class="d-flex align-items-center gap-2">
+                                <h3 class="fw-bold m-0 text-white" id="selected-staff-name" style="letter-spacing: -0.02em;">STAFF NAME</h3>
+                                <button class="action-btn" onclick="editStaffDetails()">Edit</button>
+                            </div>
+                            <div class="small mt-1 fin-math" style="color: #94a3b8; font-weight: 500;" id="selected-staff-phone">Phone: -</div>
                         </div>
-                        <button class="btn btn-custom" onclick="logStaffPayment()">+ RECORD WAGE</button>
+                        <div class="d-flex gap-2">
+                            <button class="ent-btn bg-white text-dark" style="border-color: white;" onclick="logStaffPayment()">+ Record Wage / Advance</button>
+                        </div>
+                    </div>
+
+                    <!-- Monthly Attendance Summary Strip -->
+                    <div class="row g-0 border-bottom bg-light text-center">
+                        <div class="col-3 p-3 border-end">
+                            <div class="ent-label mb-1">Full Days</div>
+                            <div class="fw-bold fin-math text-success fs-5" id="stat-full">0</div>
+                        </div>
+                        <div class="col-3 p-3 border-end">
+                            <div class="ent-label mb-1">Half Days</div>
+                            <div class="fw-bold fin-math text-warning fs-5" id="stat-half">0</div>
+                        </div>
+                        <div class="col-3 p-3 border-end">
+                            <div class="ent-label mb-1">Leaves</div>
+                            <div class="fw-bold fin-math text-danger fs-5" id="stat-leave">0</div>
+                        </div>
+                        <div class="col-3 p-3">
+                            <div class="ent-label mb-1">Effective Days</div>
+                            <div class="fw-bold fin-math text-dark fs-5" id="stat-effective">0.0</div>
+                        </div>
                     </div>
 
                     <div class="row g-0 flex-grow-1">
                         <!-- CALENDAR SECTION -->
-                        <div class="col-12 col-xl-7 border-end p-4">
-                            <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
-                                <h5 class="fw-bold m-0" style="color: #2C2C2C;" id="calendar-month-title">Current Month</h5>
-                                <button id="save-attendance-btn" class="btn btn-sm btn-success fw-bold px-3 d-none" onclick="saveAttendance()">SAVE CHANGES</button>
+                        <div class="col-12 col-xl-7 border-end p-4 bg-white">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-3 mb-3 gap-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <button class="action-btn px-2" onclick="changeMonth(-1)" title="Previous Month">&larr;</button>
+                                    <h6 class="fw-bold m-0 text-uppercase fin-math" style="min-width: 135px; text-align: center; letter-spacing: 0.04em;" id="calendar-month-title">Month Year</h6>
+                                    <button class="action-btn px-2" onclick="changeMonth(1)" title="Next Month">&rarr;</button>
+                                </div>
+                                <button id="save-attendance-btn" class="ent-btn-success d-none" onclick="saveAttendance()">Save Attendance</button>
                             </div>
                             
-                            <div class="d-flex justify-content-center gap-3 small fw-bold text-muted mb-3 bg-light p-2 rounded-3">
-                                <span class="d-flex align-items-center"><span class="d-inline-block rounded-circle bg-success me-2" style="width:10px; height:10px;"></span>Full</span>
-                                <span class="d-flex align-items-center"><span class="d-inline-block rounded-circle bg-danger me-2" style="width:10px; height:10px;"></span>Leave</span>
-                                <span class="d-flex align-items-center"><span class="d-inline-block rounded-circle bg-warning me-2" style="width:10px; height:10px;"></span>Half</span>
+                            <div class="d-flex justify-content-between align-items-center small fw-bold text-muted mb-3 px-2 py-1 rounded" style="background: var(--bg-color); font-size: 0.72rem;">
+                                <span>Tap date to cycle:</span>
+                                <div class="d-flex gap-3">
+                                    <span style="color: var(--credit);">■ FULL</span>
+                                    <span style="color: var(--warning);">■ HALF</span>
+                                    <span style="color: var(--debit);">■ LEAVE</span>
+                                </div>
                             </div>
                             
-                            <div class="cal-grid" id="calendar-grid">
-                                <!-- JS Will Inject Actual Calendar Here -->
-                            </div>
+                            <div class="cal-grid fin-math" id="calendar-grid"></div>
                         </div>
 
-                        <!-- HISTORY SECTION -->
-                        <div class="col-12 col-xl-5 p-4 bg-light">
-                            <h5 class="fw-bold mb-3 border-bottom pb-3" style="color: #2C2C2C;">Payment History</h5>
+                        <!-- PAYMENT HISTORY SECTION -->
+                        <div class="col-12 col-xl-5 p-4 bg-white">
+                            <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+                                <h6 class="fw-bold m-0 text-uppercase" style="letter-spacing: 0.05em;">Recent Wage Payouts</h6>
+                                <span class="badge-mode bg-light text-muted fin-math" id="wage-total-badge">₹ 0.00</span>
+                            </div>
+
                             <div class="table-responsive">
-                                <table class="table align-middle mb-0 table-hover">
+                                <table class="table ent-table align-middle mb-0">
                                     <thead>
-                                        <tr class="small text-muted fw-bold text-uppercase" style="letter-spacing: 0.5px;">
-                                            <th class="py-2 border-0">Date</th>
-                                            <th class="text-center py-2 border-0">Mode</th>
-                                            <th class="text-end py-2 border-0">Amount</th>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th class="text-center">Mode</th>
+                                            <th class="text-end">Amount</th>
                                         </tr>
                                     </thead>
                                     <tbody id="payment-history">
-                                        <tr><td colspan="3" class="text-center py-4 text-muted fw-semibold">Loading history...</td></tr>
+                                        <tr><td colspan="3" class="empty-state">Loading history...</td></tr>
                                     </tbody>
                                 </table>
                             </div>
                         </div>
                     </div>
+
                 </div>
 
             </div>
@@ -144,283 +498,6 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-    <script>
-        let currentShopId = null;
-        let activeStaffId = null;
-        let currentYear = new Date().getFullYear();
-        let currentMonth = new Date().getMonth(); 
-        let originalAttendanceMap = {}; 
-
-        const STATES = ['NONE', 'FULL', 'LEAVE', 'HALF'];
-
-        window.onload = async () => {
-            try {
-                const { data: userData, error: authError } = await supabaseClient.auth.getUser();
-                
-                if (authError || !userData || !userData.user) {
-                    window.location.replace('index.html');
-                    return;
-                }
-
-                const { data: profile } = await supabaseClient.from('user_profiles').select('role, shop_id').eq('id', userData.user.id).single();
-
-                if (profile && profile.role === 'admin') {
-                    currentShopId = profile.shop_id;
-                    document.getElementById('admin-content').classList.remove('d-none');
-                    await loadStaffList();
-                } else {
-                    window.location.replace('dashboard.html');
-                }
-            } catch (err) {
-                console.error(err);
-            }
-        };
-
-        async function addNewStaff() {
-            const { value: formValues } = await Swal.fire({
-                title: 'Add New Staff',
-                html: '<input id="swal-staff-name" class="swal2-input form-control" placeholder="Staff Name (e.g. Rahul)">',
-                focusConfirm: false,
-                showCancelButton: true,
-                confirmButtonText: 'Save Staff',
-                confirmButtonColor: '#2C2C2C',
-                preConfirm: () => {
-                    const name = document.getElementById('swal-staff-name').value;
-                    if (!name) Swal.showValidationMessage('Please enter a name');
-                    return { name };
-                }
-            });
-
-            if (formValues && currentShopId) {
-                const { error } = await supabaseClient.from('staff').insert([{
-                    shop_id: currentShopId,
-                    name: formValues.name
-                }]);
-
-                if (error) {
-                    Swal.fire('Error', error.message, 'error');
-                } else {
-                    Swal.fire({ title: 'Success!', icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
-                    await loadStaffList();
-                }
-            }
-        }
-
-        async function loadStaffList() {
-            const { data: staff, error } = await supabaseClient
-                .from('staff')
-                .select('id, name')
-                .eq('shop_id', currentShopId)
-                .order('name', { ascending: true }); 
-            
-            const list = document.getElementById('staff-list');
-            list.innerHTML = '';
-
-            if (error) {
-                list.innerHTML = `<div class="empty-state text-danger">Error: ${error.message}</div>`;
-                return;
-            }
-
-            if (staff && staff.length > 0) {
-                staff.forEach(s => {
-                    const activeClass = (s.id === activeStaffId) ? 'active' : '';
-                    list.innerHTML += `<div class="staff-item ${activeClass}" onclick="openStaff('${s.id}', '${s.name}', this)">${s.name}</div>`;
-                });
-            } else {
-                list.innerHTML = `<div class="empty-state">No staff found.<br>Click + NEW to start.</div>`;
-            }
-        }
-
-        async function openStaff(id, name, element) {
-            activeStaffId = id;
-            document.querySelectorAll('.staff-item').forEach(el => el.classList.remove('active'));
-            element.classList.add('active');
-            
-            document.getElementById('empty-pane').classList.add('d-none');
-            document.getElementById('dashboard-pane').classList.remove('d-none');
-            document.getElementById('selected-staff-name').innerText = name;
-
-            await generateCalendar();
-            await loadPaymentHistory();
-        }
-
-        async function generateCalendar() {
-            const grid = document.getElementById('calendar-grid');
-            grid.innerHTML = '';
-            document.getElementById('save-attendance-btn').classList.add('d-none'); 
-            
-            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-            document.getElementById('calendar-month-title').innerText = `${monthNames[currentMonth]} ${currentYear}`;
-
-            const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-            days.forEach(d => grid.innerHTML += `<div class="cal-day-header">${d}</div>`);
-
-            const startDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-01`;
-            const endDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-31`;
-            
-            const { data: records, error } = await supabaseClient.from('staff_attendance')
-                .select('record_date, status')
-                .eq('staff_id', activeStaffId)
-                .gte('record_date', startDate)
-                .lte('record_date', endDate);
-            
-            if (error) Swal.fire('Error', 'Failed to load attendance.', 'error');
-
-            originalAttendanceMap = {}; 
-            if (records) {
-                records.forEach(r => { originalAttendanceMap[r.record_date] = r.status; });
-            }
-
-            const firstDayIndex = new Date(currentYear, currentMonth, 1).getDay(); 
-            const totalDaysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-
-            for(let i = 0; i < firstDayIndex; i++) {
-                grid.innerHTML += `<div class="cal-cell empty"></div>`;
-            }
-
-            for (let day = 1; day <= totalDaysInMonth; day++) {
-                const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                const savedStatus = originalAttendanceMap[dateStr] || 'NONE';
-                const stateIdx = STATES.indexOf(savedStatus);
-                const colorClass = savedStatus !== 'NONE' ? `state-${savedStatus}` : '';
-
-                grid.innerHTML += `
-                    <div class="cal-cell ${colorClass}" data-state="${stateIdx}" data-date="${dateStr}" onclick="toggleAttendance(this)">
-                        ${day}
-                    </div>
-                `;
-            }
-        }
-
-        function toggleAttendance(element) {
-            let currentStateIdx = parseInt(element.getAttribute('data-state'));
-            let nextStateIdx = (currentStateIdx + 1) % STATES.length;
-            const stateName = STATES[nextStateIdx];
-            
-            element.setAttribute('data-state', nextStateIdx);
-            element.classList.remove('state-FULL', 'state-LEAVE', 'state-HALF');
-            if (stateName !== 'NONE') element.classList.add(`state-${stateName}`);
-            
-            const btn = document.getElementById('save-attendance-btn');
-            btn.classList.remove('d-none');
-            btn.innerText = 'SAVE CHANGES';
-            btn.disabled = false;
-        }
-
-        async function saveAttendance() {
-            const btn = document.getElementById('save-attendance-btn');
-            btn.innerText = "SAVING...";
-            btn.disabled = true;
-
-            const upserts = [];
-            const deletes = [];
-
-            document.querySelectorAll('.cal-cell:not(.empty)').forEach(cell => {
-                const dateStr = cell.getAttribute('data-date');
-                const stateIdx = parseInt(cell.getAttribute('data-state'));
-                const stateName = STATES[stateIdx];
-                const originalState = originalAttendanceMap[dateStr] || 'NONE';
-
-                if (stateName !== originalState) {
-                    if (stateName === 'NONE') {
-                        deletes.push(dateStr);
-                    } else {
-                        upserts.push({
-                            shop_id: currentShopId,
-                            staff_id: activeStaffId,
-                            record_date: dateStr,
-                            status: stateName
-                        });
-                    }
-                }
-            });
-
-            if (upserts.length > 0) {
-                await supabaseClient.from('staff_attendance').upsert(upserts, { onConflict: 'staff_id,record_date' });
-            }
-
-            if (deletes.length > 0) {
-                await supabaseClient.from('staff_attendance').delete().eq('staff_id', activeStaffId).in('record_date', deletes);
-            }
-
-            btn.innerText = "SAVED!";
-            setTimeout(() => { generateCalendar(); }, 800);
-        }
-
-        async function loadPaymentHistory() {
-            const { data: txns } = await supabaseClient.from('daily_transactions')
-                .select('created_at, amount, payment_method')
-                .eq('staff_id', activeStaffId)
-                .eq('transaction_type', 'EXPENSE')
-                .order('created_at', { ascending: false })
-                .limit(15);
-
-            const tbody = document.getElementById('payment-history');
-            tbody.innerHTML = '';
-
-            if (txns && txns.length > 0) {
-                txns.forEach(txn => {
-                    const date = new Date(txn.created_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' });
-                    const badgeClass = txn.payment_method === 'UPI' ? 'bg-primary-subtle text-primary border-primary-subtle' : 'bg-secondary-subtle text-secondary border-secondary-subtle';
-                    
-                    tbody.innerHTML += `
-                        <tr style="transition: background 0.2s;" onmouseover="this.style.background='#FFF'" onmouseout="this.style.background='transparent'">
-                            <td class="fw-bold small text-muted">${date}</td>
-                            <td class="text-center">
-                                <span class="badge border ${badgeClass} px-2 py-1" style="font-size: 0.65rem;">${txn.payment_method}</span>
-                            </td>
-                            <td class="text-end fw-bold text-danger fs-6">- ₹ ${parseFloat(txn.amount).toFixed(2)}</td>
-                        </tr>
-                    `;
-                });
-            } else {
-                tbody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-muted fw-semibold">No payments logged yet.</td></tr>`;
-            }
-        }
-
-        async function logStaffPayment() {
-            const { value: payData } = await Swal.fire({
-                title: 'Record Staff Wage',
-                html: `
-                    <input id="swal-pay-amt" class="swal2-input form-control mb-3 fw-bold text-danger" type="number" placeholder="Amount (₹) (Required)">
-                    <select id="swal-pay-source" class="swal2-input form-select">
-                        <option value="CASH">Cash (From Drawer)</option>
-                        <option value="UPI">Digital / UPI</option>
-                    </select>
-                `,
-                focusConfirm: false,
-                showCancelButton: true,
-                confirmButtonText: 'Confirm Payment',
-                confirmButtonColor: '#2C2C2C',
-                preConfirm: () => {
-                    const amount = parseFloat(document.getElementById('swal-pay-amt').value);
-                    if (!amount || amount <= 0) { Swal.showValidationMessage('Enter a valid payment amount'); return false; }
-                    return {
-                        amount: amount,
-                        source: document.getElementById('swal-pay-source').value
-                    };
-                }
-            });
-
-            if (payData) {
-                const { error } = await supabaseClient.from('daily_transactions').insert([{
-                    shop_id: currentShopId,
-                    staff_id: activeStaffId,
-                    transaction_type: 'EXPENSE',
-                    category: 'staff',
-                    payment_method: payData.source,
-                    amount: payData.amount,
-                    reference_note: 'Staff Payout',
-                    status: 'open' 
-                }]);
-
-                if (error) return Swal.fire('Error', error.message, 'error');
-                
-                Swal.fire({ title: 'Logged!', icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
-                await loadPaymentHistory(); 
-            }
-        }
-    </script>
+    <script src="staff.js"></script>
 </body>
 </html>
