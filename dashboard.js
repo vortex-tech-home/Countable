@@ -31,9 +31,10 @@ window.addEventListener('storage', (e) => {
     }
 });
 
+/* ---------- Initialization ---------- */
 window.onload = async () => {
     initActiveDate();
-
+    
     try {
         const { data: userData } = await supabaseClient.auth.getUser();
         if (userData && userData.user) {
@@ -41,7 +42,7 @@ window.onload = async () => {
             if (profile) {
                 currentShopId = profile.shop_id;
                 isAdmin = (profile.role === 'admin');
-
+                
                 if (isAdmin) {
                     document.getElementById('edit-col-header').classList.remove('d-none');
                     document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('d-none'));
@@ -56,12 +57,13 @@ window.onload = async () => {
     }
 };
 
+/* ---------- UI Helpers ---------- */
 function toggleExpenseFields() {
     const cat = document.getElementById('expense-category').value;
     document.getElementById('vendor-group').classList.add('d-none');
     document.getElementById('staff-group').classList.add('d-none');
     document.getElementById('finance-group').classList.add('d-none');
-
+    
     if (cat === 'vendor') document.getElementById('vendor-group').classList.remove('d-none');
     if (cat === 'staff') document.getElementById('staff-group').classList.remove('d-none');
     if (cat === 'finance') document.getElementById('finance-group').classList.remove('d-none');
@@ -70,17 +72,17 @@ function toggleExpenseFields() {
 async function loadDropdowns(shopId) {
     const { data: vendors } = await supabaseClient.from('vendors').select('id, name').eq('shop_id', shopId).or('account_type.eq.vendor,account_type.is.null');
     const vSelect = document.getElementById('vendor-select');
-    vSelect.innerHTML = '<option value="" selected disabled>Choose vendor...</option>';
+    vSelect.innerHTML = '<option value="" selected disabled>Choose Vendor...</option>';
     if (vendors) vendors.forEach(v => vSelect.innerHTML += `<option value="${v.id}">${v.name}</option>`);
 
     const { data: staff } = await supabaseClient.from('staff').select('id, name').eq('shop_id', shopId);
     const sSelect = document.getElementById('staff-select');
-    sSelect.innerHTML = '<option value="" selected disabled>Choose staff...</option>';
+    sSelect.innerHTML = '<option value="" selected disabled>Choose Staff...</option>';
     if (staff) staff.forEach(s => sSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`);
 
     const { data: finances } = await supabaseClient.from('vendors').select('id, name').eq('shop_id', shopId).eq('account_type', 'finance');
     const fSelect = document.getElementById('finance-select');
-    fSelect.innerHTML = '<option value="" selected disabled>Choose finance / kuri...</option>';
+    fSelect.innerHTML = '<option value="" selected disabled>Choose Finance / Account...</option>';
     if (finances) finances.forEach(f => fSelect.innerHTML += `<option value="${f.id}">${f.name}</option>`);
 }
 
@@ -90,6 +92,7 @@ function getLocalDayBounds(dateString) {
     return { start, end };
 }
 
+/* ---------- Smooth Numeric Animations ---------- */
 function animateMetric(id, newValue) {
     const el = document.getElementById(id);
     const from = parseFloat(el.dataset.val || 0);
@@ -97,7 +100,7 @@ function animateMetric(id, newValue) {
     el.dataset.val = to;
     if (from === to) { el.innerText = to.toFixed(2); return; }
 
-    const duration = 450;
+    const duration = 400;
     const startTime = performance.now();
     function tick(now) {
         const t = Math.min((now - startTime) / duration, 1);
@@ -108,50 +111,29 @@ function animateMetric(id, newValue) {
     requestAnimationFrame(tick);
 }
 
-function renderSkeleton() {
-    const colSpan = isAdmin ? 7 : 6;
-    let rows = '';
-    for (let i = 0; i < 5; i++) {
-        const w1 = 40 + Math.round(Math.abs(Math.sin(i * 7)) * 30);
-        const w2 = 50 + Math.round(Math.abs(Math.sin(i * 13)) * 30);
-        rows += `
-            <tr style="animation: fadeIn 0.3s forwards; animation-delay: ${i * 0.05}s; opacity: 0;">
-                <td data-label="Time"><span class="skeleton" style="width: 45px;"></span></td>
-                <td data-label="Details">
-                    <span class="skeleton d-block mb-2" style="width: ${w1}%;"></span>
-                    <span class="skeleton" style="width: ${w2}%; height: 10px;"></span>
-                </td>
-                <td data-label="Mode" class="text-center"><span class="skeleton" style="width: 44px;"></span></td>
-                <td data-label="Credit" class="text-end"><span class="skeleton" style="width: 60px;"></span></td>
-                <td data-label="Debit" class="text-end"><span class="skeleton" style="width: 60px;"></span></td>
-                <td data-label="Drawer Bal" class="text-end"><span class="skeleton" style="width: 70px;"></span></td>
-                ${isAdmin ? '<td data-label="Action"></td>' : ''}
-            </tr>`;
-    }
-    document.getElementById('txn-body').innerHTML = rows;
-}
-
+/* ---------- Core Data Engine ---------- */
 async function loadDashboardData() {
     if (!currentShopId) return;
     const selectedDate = document.getElementById('active-date').value;
     if (!selectedDate) return;
 
-    renderSkeleton();
+    // Show loading text
+    document.getElementById('txn-body').innerHTML = `<tr><td colspan="${isAdmin ? 7 : 6}" class="text-center py-4 text-muted fin-math fw-semibold">Fetching ledger...</td></tr>`;
 
     const { start, end } = getLocalDayBounds(selectedDate);
 
-    const shopPromise = supabaseClient.from('shops').select('master_ledger_balance').eq('id', currentShopId).single();
-    const txnPromise = supabaseClient.from('daily_transactions')
+    // Fetch unified vault balance
+    const { data: shopData } = await supabaseClient.from('shops').select('master_ledger_balance').eq('id', currentShopId).single();
+    animateMetric('display-vault', parseFloat(shopData?.master_ledger_balance || 0));
+
+    // Fetch day's transactions
+    const { data: txns, error } = await supabaseClient.from('daily_transactions')
         .select(`*, vendors ( name ), staff ( name )`)
         .eq('shop_id', currentShopId)
         .gte('created_at', start)
         .lte('created_at', end)
-        .order('created_at', { ascending: true });
-
-    const [{ data: shopData }, { data: txns, error }] = await Promise.all([shopPromise, txnPromise]);
-
-    animateMetric('display-vault', parseFloat(shopData?.master_ledger_balance || 0));
-
+        .order('created_at', { ascending: true }); 
+    
     if (error) return console.error("Fetch Error:", error);
 
     let cashSales = 0, upiSales = 0, totalExpense = 0, drawerCash = 0;
@@ -163,27 +145,31 @@ async function loadDashboardData() {
             const amt = parseFloat(txn.amount);
             const isLegacySweep = txn.reference_note && txn.reference_note.includes('Transferred to Master Vault');
 
+            // Calculate aggregations
             if (txn.transaction_type === 'INCOME') {
                 if (txn.payment_method === 'CASH') cashSales += amt;
                 else upiSales += amt;
             }
             if (txn.transaction_type === 'EXPENSE' && !isLegacySweep) totalExpense += amt;
 
+            // Physical Drawer Logic
             if (txn.payment_method === 'CASH') {
                 if (txn.transaction_type === 'INCOME') { drawerCash += amt; runningCashBalance += amt; }
                 if (txn.transaction_type === 'EXPENSE') { drawerCash -= amt; runningCashBalance -= amt; }
             }
 
+            // Clean up classification names
             let mainGroup = (txn.category || 'OTHER').toUpperCase();
             let partyName = txn.reference_note || '-';
-
+            
             if (txn.category === 'vendor' && txn.vendors) { mainGroup = 'VENDOR PAYOUT'; partyName = txn.vendors.name; }
             else if (txn.category === 'finance' && txn.vendors) { mainGroup = 'FINANCE / EMI'; partyName = txn.vendors.name; }
             else if (txn.category === 'staff' && txn.staff) { mainGroup = 'STAFF WAGE'; partyName = txn.staff.name; }
-
-            let refNote = txn.reference_note ? `<div class="tx-ref">Ref: ${txn.reference_note}</div>` : '';
+            
+            let refNote = txn.reference_note ? `<div class="text-muted" style="font-size: 0.7rem; margin-top: 2px;">Ref: ${txn.reference_note}</div>` : '';
             if (partyName === txn.reference_note) refNote = '';
 
+            // HIDE LEGACY SWEEPS FROM THE UI
             if (!isLegacySweep) {
                 processedTxns.push({
                     ...txn,
@@ -197,54 +183,45 @@ async function loadDashboardData() {
         });
     }
 
-    processedTxns.reverse();
+    // Render Table
+    processedTxns.reverse(); // Newest first
     const tbody = document.getElementById('txn-body');
     tbody.innerHTML = '';
 
     if (processedTxns.length > 0) {
-        processedTxns.forEach((txn, idx) => {
+        processedTxns.forEach(txn => {
             const timeStr = new Date(txn.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
             const isIncome = txn.transaction_type === 'INCOME';
-
-            const creditHtml = isIncome ? `<span class="amount-credit">₹ ${txn.amt.toFixed(2)}</span>` : '<span style="color: var(--line-strong);">—</span>';
-            const debitHtml = !isIncome ? `<span class="amount-debit">₹ ${txn.amt.toFixed(2)}</span>` : '<span style="color: var(--line-strong);">—</span>';
-
-            const badgeHtml = txn.payment_method === 'UPI'
-                ? `<span class="mode-badge mode-upi">UPI</span>`
-                : `<span class="mode-badge mode-cash">Cash</span>`;
-
-            // BUG FIX: vendor_id/type/category are passed through again so edit/delete
-            // can keep vendors.outstanding_balance correct. There is no database trigger
-            // for this table (only the vault balance is trigger-maintained) — see the
-            // note above editTransaction()/deleteTransaction() below.
-            let safeVendorId = txn.vendor_id ? txn.vendor_id : 'null';
-            let safeCategory = txn.category ? txn.category : 'none';
+            
+            const creditHtml = isIncome ? `₹ ${txn.amt.toFixed(2)}` : '-';
+            const debitHtml = !isIncome ? `₹ ${txn.amt.toFixed(2)}` : '-';
+            
+            const badgeHtml = txn.payment_method === 'UPI' 
+                ? `<span class="badge-mode bg-light text-secondary">UPI</span>` 
+                : `<span class="badge-mode bg-light text-dark">CASH</span>`;
 
             let adminEditBtn = isAdmin ? `
                 <td data-label="Action" class="text-center admin-only align-middle">
-                    <div class="d-flex justify-content-end justify-content-md-center gap-1">
-                        <button class="action-btn" onclick="editTransaction('${txn.id}', ${txn.amt}, '${safeVendorId}', '${txn.transaction_type}', '${safeCategory}')" title="Edit"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
-                        <button class="action-btn danger" onclick="deleteTransaction('${txn.id}', ${txn.amt}, '${safeVendorId}', '${txn.transaction_type}', '${safeCategory}')" title="Delete"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+                    <div class="d-flex justify-content-end justify-content-md-center gap-2">
+                        <button class="action-btn" onclick="editTransaction('${txn.id}', ${txn.amt})">Edit</button>
+                        <button class="action-btn danger" onclick="deleteTransaction('${txn.id}')">Del</button>
                     </div>
                 </td>
             ` : '';
-
-            const delay = Math.min(idx * 30, 450);
-
-            // Added data-labels for mobile CSS targeting
+            
             tbody.innerHTML += `
-                <tr style="animation-delay: ${delay}ms;">
-                    <td data-label="Time" class="tx-time text-start">${timeStr}</td>
-                    <td data-label="Details" class="text-start">
-                        <div class="tx-group">${txn.mainGroup}</div>
+                <tr>
+                    <td data-label="Time" class="mobile-hide text-muted fin-math small">${timeStr}</td>
+                    <td data-label="Details">
+                        <div class="tx-group small">${txn.mainGroup}</div>
                         <div class="tx-party">${txn.partyName}</div>
                         ${txn.refNote}
                     </td>
                     <td data-label="Mode" class="text-end text-md-center">${badgeHtml}</td>
-                    <td data-label="Credit" class="text-end">${creditHtml}</td>
-                    <td data-label="Debit" class="text-end">${debitHtml}</td>
-                    <td data-label="Drawer Bal" class="text-end drawer-balance">
-                        ${txn.payment_method === 'CASH' ? '₹ ' + txn.currentBalance.toFixed(2) : '<span style="color: var(--ink-muted); font-weight: 500;">Digital</span>'}
+                    <td data-label="Credit" class="text-end fw-bold text-success fin-math">${creditHtml}</td>
+                    <td data-label="Debit" class="text-end fw-bold text-danger fin-math">${debitHtml}</td>
+                    <td data-label="Drawer Bal" class="text-end mobile-hide fw-bold fin-math">
+                        ${txn.payment_method === 'CASH' ? '₹ ' + txn.currentBalance.toFixed(2) : '<span class="text-muted fw-normal small" style="letter-spacing: 0;">N/A</span>'}
                     </td>
                     ${adminEditBtn}
                 </tr>
@@ -252,7 +229,7 @@ async function loadDashboardData() {
         });
     } else {
         const colSpanCount = isAdmin ? 7 : 6;
-        tbody.innerHTML = `<tr style="animation: fadeIn 0.4s forwards;"><td colspan="${colSpanCount}" class="text-center py-5" style="color: var(--ink-muted); font-weight: 500;">No transactions logged for this date.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${colSpanCount}" class="text-center py-4 text-muted fin-math fw-semibold">No transactions found for this date.</td></tr>`;
     }
 
     animateMetric('display-sales-cash', cashSales);
@@ -261,30 +238,28 @@ async function loadDashboardData() {
     animateMetric('display-drawer', drawerCash);
 }
 
+/* ---------- Transaction Submissions ---------- */
 function getSubmissionTimestamp() {
     const dateVal = document.getElementById('active-date').value;
     const now = new Date();
     const localString = `${dateVal}T${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-    return new Date(localString).toISOString();
+    return new Date(localString).toISOString(); 
 }
 
-async function submitIncome() {
+async function submitIncome() { 
     if(!currentShopId) return;
     const category = document.getElementById('income-category').value;
     const method = document.getElementById('income-method').value;
     const amount = parseFloat(document.getElementById('income-amount').value);
     const note = document.getElementById('income-note').value;
+    
+    if(!amount || amount <= 0) return Swal.fire('Invalid', 'Enter a valid amount.', 'error');
 
-    if(!amount || amount <= 0) return Swal.fire('Invalid Amount', 'Please enter a valid amount.', 'error');
-
-    // Vault balance needs no manual handling here — a database trigger on
-    // daily_transactions (see vault_triggers.sql) credits shops.master_ledger_balance
-    // automatically for CASH income the moment this row is inserted.
     const { error } = await supabaseClient.from('daily_transactions').insert([{
-        shop_id: currentShopId,
-        transaction_type: 'INCOME',
-        category: category,
-        payment_method: method,
+        shop_id: currentShopId, 
+        transaction_type: 'INCOME', 
+        category: category, 
+        payment_method: method, 
         amount: amount,
         reference_note: note,
         status: 'open',
@@ -292,130 +267,94 @@ async function submitIncome() {
     }]);
 
     if (error) return Swal.fire('Error', error.message, 'error');
-
+    
     document.getElementById('income-amount').value = '';
     document.getElementById('income-note').value = '';
-    Swal.fire({ title: 'Logged!', icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
+    Swal.fire({ title: 'Logged', icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
     await loadDashboardData();
 }
 
-async function submitExpense() {
+async function submitExpense() { 
     if(!currentShopId) return;
     const category = document.getElementById('expense-category').value;
     const method = document.getElementById('expense-method').value;
     const amount = parseFloat(document.getElementById('expense-amount').value);
     const note = document.getElementById('expense-note').value;
-
-    if(category === 'none') return Swal.fire('Missing Category', 'Please select an expense class.', 'warning');
-    if(!amount || amount <= 0) return Swal.fire('Invalid Amount', 'Please enter a valid amount.', 'error');
+    
+    if(category === 'none') return Swal.fire('Missing', 'Select classification.', 'warning');
+    if(!amount || amount <= 0) return Swal.fire('Invalid', 'Enter valid amount.', 'error');
 
     let vendor_id = null, staff_id = null;
     if (category === 'vendor') {
         vendor_id = document.getElementById('vendor-select').value;
-        if (!vendor_id) return Swal.fire('Missing Vendor', 'Please select a vendor.', 'warning');
+        if (!vendor_id) return Swal.fire('Missing', 'Select vendor.', 'warning');
     } else if (category === 'staff') {
         staff_id = document.getElementById('staff-select').value;
-        if (!staff_id) return Swal.fire('Missing Staff', 'Please select a staff member.', 'warning');
+        if (!staff_id) return Swal.fire('Missing', 'Select staff.', 'warning');
     } else if (category === 'finance') {
-        vendor_id = document.getElementById('finance-select').value;
-        if (!vendor_id) return Swal.fire('Missing Finance Account', 'Please select a Finance / Kuri account.', 'warning');
+        vendor_id = document.getElementById('finance-select').value; 
+        if (!vendor_id) return Swal.fire('Missing', 'Select account.', 'warning');
     }
 
-    // Vault balance: handled automatically by the same trigger noted in submitIncome().
     const { error: insertErr } = await supabaseClient.from('daily_transactions').insert([{
-        shop_id: currentShopId,
-        transaction_type: 'EXPENSE',
-        category: category,
-        payment_method: method,
-        amount: amount,
-        reference_note: note,
-        vendor_id: vendor_id,
+        shop_id: currentShopId, 
+        transaction_type: 'EXPENSE', 
+        category: category, 
+        payment_method: method, 
+        amount: amount, 
+        reference_note: note, 
+        vendor_id: vendor_id, 
         staff_id: staff_id,
         status: 'open',
         created_at: getSubmissionTimestamp()
     }]);
 
-    if (insertErr) return Swal.fire('Ledger Error', insertErr.message, 'error');
-
-    // BUG FIX: this block was missing entirely. vendors.outstanding_balance has no
-    // database trigger (only the vault balance does), so without this, a vendor or
-    // finance expense logged here would never reduce what that vendor is owed.
-    if (vendor_id) {
-        const { data: vData } = await supabaseClient.from('vendors').select('outstanding_balance').eq('id', vendor_id).single();
-        if (vData) {
-            const newBal = parseFloat(vData.outstanding_balance || 0) - amount;
-            await supabaseClient.from('vendors').update({ outstanding_balance: newBal }).eq('id', vendor_id);
-        }
-    }
-
+    if (insertErr) return Swal.fire('Error', insertErr.message, 'error');
+    
     document.getElementById('expense-amount').value = '';
     document.getElementById('expense-note').value = '';
-    Swal.fire({ title: 'Logged!', icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
+    Swal.fire({ title: 'Logged', icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
     await loadDashboardData();
 }
 
-// BUG FIX: previously took only (txnId, currentAmount) — with no vendor_id/type/category,
-// editing a vendor or finance expense's amount silently stopped updating that vendor's
-// outstanding balance. The vault itself needs no handling here (trigger-covered), but
-// vendor balances are still JS-maintained, matching accounts.js and master-ledger.js.
-async function editTransaction(txnId, currentAmount, vendorIdStr, type, category) {
+/* ---------- Admin Actions ---------- */
+async function editTransaction(txnId, currentAmount) {
     const { value: newAmountStr } = await Swal.fire({
-        title: 'Modify Transaction Amount',
+        title: 'Edit Amount',
         input: 'number',
         inputValue: currentAmount,
         showCancelButton: true,
-        confirmButtonColor: '#161d2b',
+        confirmButtonColor: '#0f172a',
         confirmButtonText: 'Update'
     });
 
-    if (!newAmountStr) return;
+    if (!newAmountStr) return; 
     const newAmount = parseFloat(newAmountStr);
     if (isNaN(newAmount) || newAmount <= 0) return Swal.fire('Error', 'Invalid amount.', 'error');
-    const difference = newAmount - currentAmount;
-    if (difference === 0) return;
+    if (newAmount - currentAmount === 0) return; 
 
     const { error } = await supabaseClient.from('daily_transactions').update({ amount: newAmount }).eq('id', txnId);
-    if (error) return Swal.fire('Database Error', error.message, 'error');
+    if (error) return Swal.fire('Error', error.message, 'error');
 
-    if (vendorIdStr !== 'null' && type === 'EXPENSE' && (category === 'vendor' || category === 'finance')) {
-        const { data: vData } = await supabaseClient.from('vendors').select('outstanding_balance').eq('id', vendorIdStr).single();
-        if (vData) {
-            const updatedBal = parseFloat(vData.outstanding_balance || 0) - difference;
-            await supabaseClient.from('vendors').update({ outstanding_balance: updatedBal }).eq('id', vendorIdStr);
-        }
-    }
-
-    Swal.fire({ title: 'Updated!', icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
+    Swal.fire({ title: 'Updated', icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
     await loadDashboardData();
 }
 
-// BUG FIX: previously took only (txnId) and claimed "balances will be reversed
-// automatically by the database" — true for the vault (trigger-covered), not true
-// for vendor balances (no trigger exists for that table). Restored the params and
-// the actual reversal, and corrected the confirmation copy to not overclaim.
-async function deleteTransaction(txnId, amount, vendorIdStr, type, category) {
+async function deleteTransaction(txnId) {
     const result = await Swal.fire({
-        title: 'Wipe Record?',
-        text: "The vault balance updates automatically. If this was a vendor or finance payment, its outstanding balance will be adjusted too.",
+        title: 'Delete Record?',
+        text: "Balances will auto-correct.",
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonColor: '#b42318',
-        cancelButtonColor: '#161d2b',
-        confirmButtonText: 'Yes, Delete'
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Delete'
     });
 
     if (result.isConfirmed) {
         const { error: delError } = await supabaseClient.from('daily_transactions').delete().eq('id', txnId);
         if (delError) return Swal.fire('Error', delError.message, 'error');
-
-        if (vendorIdStr !== 'null' && type === 'EXPENSE' && (category === 'vendor' || category === 'finance')) {
-            const { data: vData } = await supabaseClient.from('vendors').select('outstanding_balance').eq('id', vendorIdStr).single();
-            if (vData) {
-                const restoredBal = parseFloat(vData.outstanding_balance || 0) + amount;
-                await supabaseClient.from('vendors').update({ outstanding_balance: restoredBal }).eq('id', vendorIdStr);
-            }
-        }
-
+        
         Swal.fire({ title: 'Deleted', icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
         await loadDashboardData();
     }
