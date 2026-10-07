@@ -2,92 +2,395 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Accounts & Vendors</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Enterprise Accounts & Passbooks</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-init.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <!-- Enterprise PDF Generation Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
     <style>
-        body { font-family: 'Public Sans', sans-serif; background-color: #FDFBF7; }
-        .card-hover { transition: transform 0.3s ease, box-shadow 0.3s ease; border-radius: 16px; border: 1px solid rgba(197, 160, 89, 0.15); }
-        .card-hover:hover { box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08); }
-        .text-gold { color: #C5A059; }
-        .bg-gold-subtle { background-color: rgba(197, 160, 89, 0.1); }
-        .form-control, .form-select { background: #F8F9FA; border: 1px solid #EAE0D5; padding: 10px 15px; border-radius: 10px; font-weight: 500; transition: 0.2s; }
-        .form-control:focus, .form-select:focus { background: #FFF; box-shadow: 0 0 0 4px rgba(197, 160, 89, 0.15); border-color: #C5A059; outline: none; }
-        .nav-pills .nav-link { color: #888; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; font-size: 0.8rem; border-radius: 30px; padding: 10px 20px; transition: 0.2s; cursor: pointer; }
-        .nav-pills .nav-link.active { background-color: #2C2C2C; color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .account-item { padding: 15px; border-radius: 12px; cursor: pointer; border: 1px solid transparent; transition: 0.2s; background: white; margin-bottom: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
-        .account-item:hover { border-color: #C5A059; transform: translateY(-2px); }
-        .account-item.active { background: #2C2C2C; color: white !important; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .account-item.active .acc-name { color: white !important; }
-        .account-item.active .acc-bal { color: #f87171 !important; }
-        .acc-name { font-weight: 700; font-size: 0.95em; color: #2C2C2C; display: block; text-transform: uppercase; letter-spacing: 0.2px; }
-        .acc-bal { font-size: 0.85em; font-weight: 800; color: #dc2626; }
-        .acc-bal.zero { color: #9ca3af; }
-        .acc-bal.credit { color: #198754; }
-        .btn-custom { background-color: #2C2C2C; color: white; border: none; font-weight: 800; padding: 12px 20px; border-radius: 10px; transition: 0.2s; letter-spacing: 0.5px; }
-        .btn-custom:hover { background-color: #1a1a1a; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.15); color: white; }
-        .btn-custom:disabled { opacity: 0.6; transform: none; box-shadow: none; cursor: not-allowed; }
-        .btn-gold { background-color: #C5A059; color: white; }
-        .btn-gold:hover { background-color: #b08d4b; color: white; }
-        .field-label { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #888; letter-spacing: 0.5px; margin-bottom: 6px; display: block; }
-        .action-btn { font-size: 0.8rem; font-weight: 700; padding: 6px 10px; border-radius: 6px; border: 1px solid #EAE0D5; background: #fff; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; }
-        .action-btn:hover { background: #f8f9fa; border-color: #C5A059; }
-        .action-btn.text-danger:hover { border-color: #dc3545; background: #fdf2f2; }
-        .empty-state { display: flex; align-items: center; justify-content: center; height: 100%; color: #9ca3af; font-size: 0.95em; text-align: center; padding: 40px; flex-direction: column; }
-        .pb-name-row { display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .pb-edit-btn { width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; }
-        #pb-name { text-transform: uppercase; }
-
-        /* Directory sidebar is meant to stick while scrolling on desktop/tablet.
-           sticky-md-top is not a real Bootstrap utility, so this rule is what
-           actually makes it work above the md breakpoint. */
-        .sticky-md-top { position: relative; }
-        @media (min-width: 768px) {
-            .sticky-md-top { position: sticky; top: 100px; }
+        :root {
+            --bg-color: #f3f4f6;
+            --surface: #ffffff;
+            --border: #d1d5db;
+            --border-light: #e5e7eb;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            --primary-dark: #0f172a;
+            --credit: #16a34a;
+            --debit: #dc2626;
+            --radius: 6px;
         }
 
+        body { 
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif; 
+            background-color: var(--bg-color); 
+            color: var(--text-main);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .fin-math {
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.02em;
+        }
+
+        /* --- Enterprise Containers --- */
+        .ent-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .ent-header-dark {
+            background: var(--primary-dark);
+            color: white;
+            border: 1px solid var(--primary-dark);
+        }
+
+        .ent-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        /* --- Form Controls --- */
+        .form-control, .form-select {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-main);
+            transition: none;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-dark);
+            box-shadow: 0 0 0 1px var(--primary-dark);
+            outline: none;
+        }
+        .form-control::placeholder {
+            font-weight: 400;
+            color: #9ca3af;
+        }
+
+        /* --- Strict Segmented Toggles --- */
+        .segmented {
+            display: flex;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+            background: var(--bg-color);
+        }
+        .segmented-btn,
+        .segmented .btn-check + label {
+            flex: 1;
+            padding: 8px 10px;
+            margin: 0;
+            font-size: 0.73rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            text-align: center;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            border-right: 1px solid var(--border);
+            user-select: none;
+        }
+        .segmented-btn:last-child,
+        .segmented .btn-check + label:last-child { border-right: none; }
+        .segmented-btn.active,
+        .segmented .btn-check:checked + label {
+            background: var(--primary-dark);
+            color: #ffffff;
+        }
+
+        /* --- Directory Account List --- */
+        .account-item {
+            padding: 12px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        .account-item:hover {
+            background: #f9fafb;
+            border-color: #9ca3af;
+        }
+        .account-item.active {
+            background: var(--primary-dark);
+            border-color: var(--primary-dark);
+            color: #ffffff;
+        }
+        .acc-name {
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--text-main);
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+            word-break: break-word;
+        }
+        .acc-sub {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        .account-item.active .acc-name { color: #ffffff; }
+        .account-item.active .acc-sub { color: #94a3b8; }
+
+        .acc-bal {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--debit);
+            white-space: nowrap;
+        }
+        .acc-bal.zero { color: var(--text-muted); }
+        .acc-bal.credit { color: var(--credit); }
+        .account-item.active .acc-bal { color: #fca5a5; }
+        .account-item.active .acc-bal.zero { color: #cbd5e1; }
+        .account-item.active .acc-bal.credit { color: #86efac; }
+
+        /* --- Buttons --- */
+        .ent-btn {
+            background-color: var(--primary-dark);
+            color: white;
+            border: 1px solid var(--primary-dark);
+            font-weight: 700;
+            font-size: 0.78rem;
+            padding: 9px 14px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .ent-btn:hover { background-color: #000; color: white; }
+
+        .ent-btn-outline {
+            background-color: var(--surface);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            font-weight: 700;
+            font-size: 0.78rem;
+            padding: 9px 14px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .ent-btn-outline:hover { background-color: var(--bg-color); border-color: var(--primary-dark); }
+
+        .action-btn {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text-main);
+        }
+        .action-btn:hover { background: var(--bg-color); }
+        .action-btn.danger { color: var(--debit); }
+        .action-btn.danger:hover { background: #fef2f2; border-color: var(--debit); }
+
+        /* --- Passbook Table --- */
+        .ent-table { font-size: 0.8125rem; margin: 0; }
+        .ent-table thead th {
+            background: var(--bg-color);
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            border-bottom: 2px solid var(--border) !important;
+            padding: 10px 16px;
+        }
+        .ent-table td {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border-light);
+            vertical-align: middle;
+        }
+        .ent-table tbody tr:hover { background: #f9fafb; }
+
+        .badge-mode {
+            font-size: 0.65rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        .empty-state {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-align: center;
+            padding: 40px 20px;
+            flex-direction: column;
+        }
+
+        /* --- Enterprise SweetAlert2 Modal Overrides --- */
+        .swal2-popup {
+            font-family: 'Plus Jakarta Sans', sans-serif !important;
+            border-radius: 6px !important;
+            border: 1px solid var(--border) !important;
+            padding: 1.5rem !important;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+        }
+        .swal2-title {
+            font-size: 1.1rem !important;
+            font-weight: 800 !important;
+            color: var(--text-main) !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.04em !important;
+            padding: 0 0 10px 0 !important;
+            border-bottom: 1px solid var(--border-light);
+            margin-bottom: 16px !important;
+            text-align: left !important;
+        }
+        .swal2-html-container {
+            margin: 0 !important;
+            padding: 0 !important;
+            text-align: left !important;
+            overflow-x: hidden !important;
+        }
+        .swal2-actions {
+            margin-top: 1.25rem !important;
+            width: 100% !important;
+            justify-content: flex-end !important;
+            gap: 8px !important;
+        }
+        .swal2-styled.swal2-confirm {
+            background-color: var(--primary-dark) !important;
+            border-radius: 4px !important;
+            font-size: 0.78rem !important;
+            font-weight: 700 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.06em !important;
+            padding: 9px 18px !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+        }
+        .swal2-styled.swal2-cancel {
+            background-color: var(--surface) !important;
+            color: var(--text-main) !important;
+            border: 1px solid var(--border) !important;
+            border-radius: 4px !important;
+            font-size: 0.78rem !important;
+            font-weight: 700 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.06em !important;
+            padding: 9px 16px !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+        }
+
+        .sticky-sidebar { position: relative; }
+        @media (min-width: 992px) {
+            .sticky-sidebar { position: sticky; top: 90px; }
+        }
+
+        /* --- Mobile Responsive Table Cards --- */
         @media (max-width: 768px) {
             .mobile-hide { display: none !important; }
-            .passbook-actions { flex-direction: column; }
-            .passbook-actions button { width: 100%; margin-bottom: 8px; }
+            .passbook-actions { flex-direction: column; width: 100%; }
+            .passbook-actions button { width: 100%; }
+
+            .ent-table thead { display: none; }
+            .ent-table, .ent-table tbody, .ent-table tr, .ent-table td { display: block; width: 100%; }
+            .ent-table tr {
+                background: var(--surface);
+                border: 1px solid var(--border) !important;
+                border-radius: var(--radius);
+                margin-bottom: 10px;
+                padding: 4px 12px;
+            }
+            .ent-table td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 8px 0;
+                border: none;
+                border-bottom: 1px solid var(--border-light);
+                text-align: right;
+            }
+            .ent-table td:last-child { border-bottom: none; }
+            .ent-table td::before {
+                content: attr(data-label);
+                font-weight: 700;
+                font-size: 0.7rem;
+                color: var(--text-muted);
+                text-transform: uppercase;
+                text-align: left;
+                letter-spacing: 0.05em;
+            }
         }
     </style>
 </head>
 <body>
 
+    <script> window.APP_VERSION = 'v1.8.2'; </script>
     <script src="navbar.js"></script>
 
-    <main class="container-fluid py-4 mb-5 d-none" id="admin-content">
+    <main class="container-fluid py-4 mb-5 d-none" id="admin-content" style="max-width: 1280px;">
+        
+        <!-- Header Section -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4 pb-3 border-bottom border-secondary-subtle">
+            <div>
+                <h4 class="fw-bold m-0 text-dark" style="letter-spacing: -0.02em;">Accounts & Passbooks</h4>
+                <p class="text-muted small fw-medium mb-0 mt-1">Manage vendor payables, finance EMIs, and party statements</p>
+            </div>
+        </div>
+
         <div class="row g-4">
             
             <!-- LEFT: DIRECTORY -->
             <div class="col-12 col-lg-4 col-xl-3">
-                <div class="sticky-md-top" style="top: 100px;">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h4 class="fw-bold m-0" style="color: #2C2C2C;">Directory</h4>
-                        <button class="btn btn-sm btn-custom admin-only d-none px-3" onclick="openAddAccountModal()">+ NEW</button>
+                <div class="sticky-sidebar ent-card p-3">
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                        <span class="ent-label m-0" style="color: var(--text-main);">Account Directory</span>
+                        <button class="ent-btn py-1 px-2 admin-only d-none" style="font-size: 0.7rem;" onclick="openAddAccountModal()">+ New Account</button>
                     </div>
 
-                    <input type="text" id="account-search" class="form-control mb-3 shadow-sm" placeholder="Search accounts..." onkeyup="filterAccounts()">
+                    <input type="text" id="account-search" class="form-control mb-3" placeholder="Filter by account name..." oninput="filterAccounts()">
 
-                    <ul class="nav nav-pills mb-3 d-flex w-100 gap-2">
-                        <li class="nav-item flex-fill text-center">
-                            <div class="nav-link active w-100 shadow-sm" id="tab-vendors" onclick="switchTab('vendors')">Vendors</div>
-                        </li>
-                        <li class="nav-item flex-fill text-center">
-                            <div class="nav-link w-100 shadow-sm" id="tab-finances" onclick="switchTab('finances')">Finances</div>
-                        </li>
-                    </ul>
+                    <!-- Strict Segmented Tab Switcher with Live Counts -->
+                    <div class="segmented mb-3" role="tablist">
+                        <button type="button" class="segmented-btn active" id="tab-vendors" onclick="switchTab('vendors')">
+                            Vendors (<span id="count-vendors">0</span>)
+                        </button>
+                        <button type="button" class="segmented-btn" id="tab-finances" onclick="switchTab('finances')">
+                            Finances (<span id="count-finances">0</span>)
+                        </button>
+                    </div>
 
-                    <div id="account-list" style="max-height: 60vh; overflow-y: auto; padding-right: 5px;">
-                        <div class="empty-state">Loading accounts...</div>
+                    <div id="account-list" style="max-height: 62vh; overflow-y: auto; padding-right: 2px;">
+                        <div class="empty-state">Loading directory...</div>
                     </div>
                 </div>
             </div>
@@ -96,61 +399,65 @@
             <div class="col-12 col-lg-8 col-xl-9">
                 
                 <!-- DEFAULT EMPTY STATE -->
-                <div id="empty-pane" class="card card-hover bg-white border-0 shadow-sm h-100 d-flex justify-content-center align-items-center p-5">
-                    <div class="text-center opacity-50">
-                        <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" class="mb-3">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"></path>
-                        </svg>
-                        <h5 class="fw-bold text-dark">No Account Selected</h5>
-                        <p class="small text-muted">Select an entity from the directory to view its ledger.</p>
+                <div id="empty-pane" class="ent-card h-100 d-flex justify-content-center align-items-center p-5" style="min-height: 420px;">
+                    <div class="text-center">
+                        <div class="ent-label mb-1">Passbook Terminal</div>
+                        <h6 class="fw-bold text-dark mb-1">No Account Selected</h6>
+                        <p class="small text-muted m-0">Select a Vendor or Finance account from the directory to inspect its ledger.</p>
                     </div>
                 </div>
 
                 <!-- ACTIVE PASSBOOK -->
-                <div id="passbook-pane" class="card card-hover bg-white border-0 shadow-sm d-none flex-column overflow-hidden h-100">
-                    <div id="pdf-export-area">
-                        
-                        <div class="p-4 p-md-5 border-bottom bg-light text-center position-relative">
-                            <div class="small fw-bold text-muted text-uppercase mb-2 tracking-wide" id="pb-type" style="letter-spacing: 1px;">Vendor Account</div>
-                            
-                            <div class="pb-name-row mb-1">
-                                <h2 class="fw-bold m-0 text-dark" id="pb-name">Account Name</h2>
-                                <button class="btn btn-sm btn-light border pb-edit-btn no-print admin-only d-none" onclick="editVendorDetails()" title="Edit Account Details">✎</button>
+                <div id="passbook-pane" class="ent-card d-none flex-column overflow-hidden h-100">
+                    
+                    <!-- Passbook Top Header -->
+                    <div class="ent-header-dark p-4">
+                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                            <div>
+                                <div class="ent-label ent-label-light mb-1" id="pb-type">VENDOR ACCOUNT</div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <h3 class="fw-bold m-0 text-white" id="pb-name" style="letter-spacing: -0.02em;">ACCOUNT NAME</h3>
+                                    <button class="action-btn admin-only d-none" onclick="editVendorDetails()" title="Edit Account Details">Edit Info</button>
+                                </div>
+                                <div class="small mt-1" style="color: #94a3b8; font-weight: 500;" id="pb-meta">Phone: - | GST: -</div>
                             </div>
-                            
-                            <div class="small text-muted fw-semibold mb-4" id="pb-meta">Phone: - | GST: -</div>
-                            
-                            <div class="d-inline-block bg-white px-4 py-3 rounded-4 shadow-sm border" style="border-color: rgba(197, 160, 89, 0.2) !important;">
-                                <div class="small fw-bold text-muted text-uppercase mb-1" style="letter-spacing: 0.5px;">Outstanding Balance</div>
-                                <h2 class="fw-bold m-0 text-danger" style="letter-spacing: -1px;">₹ <span id="pb-bal">0.00</span></h2>
+
+                            <div class="text-md-end border-top border-md-0 pt-3 pt-md-0" style="border-color: rgba(255,255,255,0.15) !important;">
+                                <div class="ent-label ent-label-light mb-1">Outstanding Balance</div>
+                                <h2 class="fw-bold m-0 fin-math text-white" style="letter-spacing: -0.03em;">₹ <span id="pb-bal">0.00</span></h2>
                             </div>
                         </div>
-
-                        <div class="p-3 bg-white border-bottom d-flex justify-content-center gap-2 passbook-actions no-print">
-                            <button class="btn btn-custom btn-gold" onclick="openAddBillModal()">+ ADD DUE BILL</button>
-                            <button class="btn btn-custom" onclick="openPayModal()">RECORD PAYMENT</button>
-                            <button class="btn btn-outline-dark fw-bold px-4" id="pdf-btn" style="border-radius: 10px;" onclick="promptPDFDownload()">PDF</button>
-                        </div>
-
-                        <div class="table-responsive">
-                            <table class="table align-middle mb-0 table-hover">
-                                <thead class="bg-light" style="border-top: 1px solid #F0F0F0; border-bottom: 2px solid #EAE0D5;">
-                                    <tr class="small text-muted fw-bold text-uppercase" style="letter-spacing: 0.5px;">
-                                        <th class="ps-4 py-3 border-0">Date</th>
-                                        <th class="py-3 border-0">Details / Ref</th>
-                                        <th class="text-end py-3 border-0 text-success">Dr (Paid)</th>
-                                        <th class="text-end py-3 border-0 text-danger">Cr (Billed)</th>
-                                        <th class="text-end py-3 border-0 text-dark">Balance</th>
-                                        <th class="text-center pe-4 py-3 border-0 no-print admin-only d-none">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="pb-history">
-                                    <tr><td colspan="6" class="text-center py-5 text-muted fw-semibold">Select an account to view history.</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-
                     </div>
+
+                    <!-- Passbook Action Bar -->
+                    <div class="p-3 bg-white border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2 passbook-actions">
+                        <div class="d-flex gap-2 flex-wrap passbook-actions">
+                            <button class="ent-btn" onclick="openAddBillModal()">+ Add Due Bill</button>
+                            <button class="ent-btn-outline" onclick="openPayModal()">Record Payment</button>
+                        </div>
+                        <button class="ent-btn-outline" id="pdf-btn" onclick="downloadAccountPDF()">Download PDF</button>
+                    </div>
+
+                    <!-- Passbook Ledger Table -->
+                    <div class="table-responsive bg-white p-2 p-md-0">
+                        <table class="table ent-table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="ps-4">Date</th>
+                                    <th>Reference Details</th>
+                                    <th class="text-center">Mode</th>
+                                    <th class="text-end">Dr (Paid)</th>
+                                    <th class="text-end">Cr (Billed)</th>
+                                    <th class="text-end">Running Bal</th>
+                                    <th class="text-center pe-4 admin-only d-none">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pb-history">
+                                <tr><td colspan="7" class="empty-state">Select an account to view history.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
                 </div>
 
             </div>
@@ -158,7 +465,6 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
     <script src="accounts.js"></script>
 </body>
 </html>
