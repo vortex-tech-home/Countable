@@ -11,6 +11,10 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-init.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Enterprise PDF Generation Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
     <style>
         :root {
@@ -111,9 +115,9 @@
         .ent-btn-outline:hover { background-color: var(--bg-color); border-color: var(--primary-dark); }
         
         .action-btn {
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             font-weight: 700;
-            padding: 4px 8px;
+            padding: 3px 8px;
             border-radius: 4px;
             border: 1px solid var(--border);
             background: var(--surface);
@@ -123,7 +127,33 @@
         .action-btn.danger { color: var(--debit); }
         .action-btn.danger:hover { background: #fef2f2; border-color: var(--debit); }
 
-        /* --- Table Strict --- */
+        /* --- View Switcher --- */
+        .view-switcher {
+            display: inline-flex;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+            background: var(--bg-color);
+        }
+        .view-btn {
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 6px 12px;
+            border-right: 1px solid var(--border);
+            cursor: pointer;
+        }
+        .view-btn:last-child { border-right: none; }
+        .view-btn.active {
+            background: var(--primary-dark);
+            color: #ffffff;
+        }
+
+        /* --- Table Strict (Primary View) --- */
         .ent-table { font-size: 0.8125rem; margin: 0; }
         .ent-table thead th {
             background: var(--bg-color);
@@ -142,9 +172,38 @@
         }
         .ent-table tbody tr:hover { background: #f9fafb; }
         
-        .tx-group { font-weight: 700; color: var(--text-main); }
-        .tx-party { color: var(--text-muted); font-size: 0.75rem; font-weight: 600; }
-        
+        /* --- Compact Grid (Secondary View) --- */
+        .ledger-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 12px;
+            padding: 16px;
+            background: var(--bg-color);
+        }
+        .grid-tile {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .grid-tile-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        .grid-tile-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 8px;
+            border-top: 1px solid var(--border-light);
+        }
+
         .badge-mode {
             font-size: 0.65rem; font-weight: 800; text-transform: uppercase;
             letter-spacing: 0.05em;
@@ -154,12 +213,13 @@
 
         .empty-state { display: flex; align-items: center; justify-content: center; padding: 40px; color: var(--text-muted); font-size: 0.875rem; font-weight: 600; text-align: center; }
 
-        /* --- Mobile Table Hack --- */
+        /* --- Mobile Responsive Overrides --- */
         @media (max-width: 768px) {
             .mobile-hide { display: none !important; }
             .filter-group { flex-direction: column; align-items: stretch !important; width: 100%; }
-            .filter-group > * { margin-bottom: 10px; width: 100% !important; }
+            .filter-group > * { margin-bottom: 8px; width: 100% !important; }
             
+            /* Table View Mobile Cards */
             .ent-table thead { display: none; }
             .ent-table, .ent-table tbody, .ent-table tr, .ent-table td { display: block; width: 100%; }
             .ent-table tr {
@@ -180,26 +240,20 @@
                 color: var(--text-muted); text-transform: uppercase; text-align: left;
                 letter-spacing: 0.05em;
             }
-            .tx-group, .tx-party { text-align: right; }
-        }
 
-        /* --- Print Styles --- */
-        @media print {
-            @page { size: A4 portrait; margin: 15mm; }
-            body { background-color: #fff !important; margin: 0; padding: 0; color: #000; }
-            #sys-sidebar, .status-bar, .no-print, .filter-group { display: none !important; }
-            .main-content-wrapper { margin: 0 !important; padding: 0 !important; }
-            .ent-card { box-shadow: none !important; border: 1px solid #000 !important; border-radius: 0 !important; margin-bottom: 20px; }
-            .mobile-hide { display: table-cell !important; } 
-            .badge-mode { border: 1px solid #000 !important; color: #000 !important; background: transparent !important; }
-            th, td { font-size: 11px !important; padding: 6px !important; border-color: #000 !important; color: #000 !important; }
+            /* Compact Grid on Mobile: Dense 2-Line Strips */
+            .ledger-grid {
+                grid-template-columns: 1fr;
+                gap: 8px;
+                padding: 10px;
+            }
+            .grid-tile { padding: 10px 12px; gap: 6px; }
         }
     </style>
-<base target="_blank">
 </head>
 <body>
 
-    <script> window.APP_VERSION = 'v1.9.1'; </script>
+    <script> window.APP_VERSION = 'v1.9.2'; </script>
     <script src="navbar.js"></script>
 
     <main class="container-fluid py-4 mb-5 d-none" id="admin-content" style="max-width: 1280px;">
@@ -229,7 +283,7 @@
             </div>
         </div>
 
-        <!-- Filter Bar -->
+        <!-- Filter & Export Bar -->
         <div class="ent-card p-3 mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 no-print">
             <div class="filter-group d-flex align-items-center gap-2 w-100">
                 <select id="ledger-source-filter" class="form-select w-auto" style="min-width: 220px;" onchange="applyFilters()">
@@ -241,17 +295,26 @@
                 <span class="mobile-hide text-muted fw-bold px-2">to</span>
                 <input type="date" id="filter-date-end" class="form-control w-auto" onchange="applyFilters()">
             </div>
-            <button class="ent-btn-outline px-4" style="white-space: nowrap;" onclick="window.print()">Download PDF</button>
+            <button class="ent-btn px-4 w-100 w-md-auto" style="white-space: nowrap;" onclick="downloadLedgerPDF()">Download PDF</button>
         </div>
 
-        <!-- Data Table -->
+        <!-- Consolidated Ledger Output -->
         <div class="ent-card overflow-hidden" id="pdf-export-area">
-            <div class="p-3 border-bottom bg-white d-flex justify-content-between align-items-center">
-                <h6 class="fw-bold m-0 text-uppercase" style="letter-spacing: 0.05em;">Consolidated Ledger</h6>
-                <span class="badge-mode bg-light text-muted" id="record-count">Loading...</span>
+            <div class="p-3 border-bottom bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <h6 class="fw-bold m-0 text-uppercase" style="letter-spacing: 0.05em;">Consolidated Ledger</h6>
+                    <span class="badge-mode bg-light text-muted" id="record-count">Loading...</span>
+                </div>
+                
+                <!-- Secondary View Switcher -->
+                <div class="view-switcher no-print" role="group" aria-label="Ledger View Mode">
+                    <button type="button" class="view-btn active" id="btn-view-table" onclick="setLedgerView('TABLE')">Table View</button>
+                    <button type="button" class="view-btn" id="btn-view-grid" onclick="setLedgerView('GRID')">Compact Grid</button>
+                </div>
             </div>
             
-            <div class="table-responsive bg-white">
+            <!-- Primary View: Standard Table -->
+            <div id="ledger-table-container" class="table-responsive bg-white p-2 p-md-0">
                 <table class="table ent-table align-middle mb-0">
                     <thead>
                         <tr>
@@ -267,6 +330,9 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- Secondary View: Compact Grid -->
+            <div id="ledger-grid-container" class="ledger-grid d-none"></div>
         </div>
     </main>
 
