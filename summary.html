@@ -2,272 +2,388 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Business Analytics</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Enterprise Business Analytics</title>
 
-    <!-- BOOTSTRAP 5 & GOOGLE FONTS -->
-    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    <!-- SYNCHRONOUS SUPABASE CDN & CHART.JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-init.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
         :root {
-            --gold: #C5A059;
-            --gold-soft: rgba(197, 160, 89, 0.12);
-            --gold-line: rgba(197, 160, 89, 0.25);
-            --ink: #2C2C2C;
-            --ink-soft: #7A7A7A;
-            --cream: #FDFBF7;
-            --line: #EAE0D5;
-            --up: #198754;
-            --down: #DC3545;
+            --bg-color: #f3f4f6;
+            --surface: #ffffff;
+            --border: #d1d5db;
+            --border-light: #e5e7eb;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            --primary-dark: #0f172a;
+            --credit: #16a34a;
+            --debit: #dc2626;
+            --radius: 6px;
         }
 
-        body { font-family: 'Public Sans', sans-serif; background-color: var(--cream); color: var(--ink); }
-        .font-display { font-family: 'Playfair Display', serif; }
-
-        /* ---------- PAGE HEADER ---------- */
-        .analytics-head {
-            display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end;
-            gap: 1rem; margin-bottom: 2rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--line);
-        }
-        .analytics-eyebrow {
-            display: inline-flex; align-items: center; gap: 6px; font-size: 0.7rem; font-weight: 800;
-            letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); margin-bottom: 6px;
-        }
-        .analytics-title { font-size: 1.9rem; font-weight: 700; margin: 0; color: var(--ink); letter-spacing: -0.5px; }
-        .analytics-sub { color: var(--ink-soft); font-size: 0.9rem; margin-top: 2px; }
-
-        .period-picker {
-            display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid var(--line);
-            border-radius: 14px; padding: 8px 16px; box-shadow: 0 4px 14px rgba(0,0,0,0.04);
-        }
-        .period-picker svg { color: var(--gold); flex-shrink: 0; }
-        .period-picker .form-control {
-            border: none; background: transparent; padding: 2px 0; font-weight: 700; color: var(--ink);
-            font-size: 0.95rem; box-shadow: none !important; min-width: 140px;
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
-        /* ---------- SHARED CARD ---------- */
-        .panel {
-            background: #fff; border: 1px solid rgba(197, 160, 89, 0.14); border-radius: 20px;
-            box-shadow: 0 6px 20px rgba(44,44,44,0.045); transition: box-shadow 0.3s ease, transform 0.3s ease;
-            position: relative; height: 100%;
-        }
-        .panel:hover { box-shadow: 0 14px 30px rgba(44,44,44,0.08); }
-        .panel-pad { padding: 1.75rem; }
-        .panel-head {
-            display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;
-        }
-        .panel-title {
-            display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 0.95rem;
-            text-transform: uppercase; letter-spacing: 0.8px; color: var(--ink); margin: 0;
-        }
-        .panel-icon {
-            width: 34px; height: 34px; border-radius: 10px; background: var(--gold-soft); color: var(--gold);
-            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        .fin-math {
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.02em;
         }
 
-        /* ---------- LOADER ---------- */
+        /* --- Enterprise Containers --- */
+        .ent-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            position: relative;
+        }
+
+        .ent-header-dark {
+            background: var(--primary-dark);
+            color: #ffffff;
+            border: 1px solid var(--primary-dark);
+        }
+
+        .ent-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .ent-label-light { color: #94a3b8; }
+
+        /* --- Form Controls --- */
+        .form-control {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: var(--text-main);
+            transition: none;
+        }
+        .form-control:focus {
+            border-color: var(--primary-dark);
+            box-shadow: 0 0 0 1px var(--primary-dark);
+            outline: none;
+        }
+
+        /* --- KPI Chips & Badges --- */
+        .kpi-chips {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+        .kpi-chip {
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 3px;
+            letter-spacing: 0.04em;
+            background: var(--bg-color);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+        .kpi-chip b {
+            color: var(--text-main);
+            font-weight: 800;
+        }
+
+        /* --- Loader Overlay --- */
         .loader-overlay {
-            position: absolute; inset: 0; background: rgba(255,255,255,0.9); z-index: 10;
-            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
-            border-radius: 20px; backdrop-filter: blur(3px); transition: opacity 0.25s ease;
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.92);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border-radius: var(--radius);
         }
         .loader-spin {
-            width: 30px; height: 30px; border: 3px solid var(--gold-soft); border-top-color: var(--gold);
-            border-radius: 50%; animation: spin 0.8s linear infinite;
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--border);
+            border-top-color: var(--primary-dark);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .loader-overlay span { font-weight: 700; font-size: 0.78rem; letter-spacing: 0.5px; color: var(--ink-soft); text-transform: uppercase; }
-        .d-none { display: none !important; }
-
-        /* ---------- KPI CARDS ---------- */
-        .kpi-card { border-radius: 20px; padding: 1.5rem 1.6rem; height: 100%; position: relative; overflow: hidden; }
-        .kpi-card.is-light { background: #fff; border: 1px solid rgba(197,160,89,0.14); box-shadow: 0 6px 20px rgba(44,44,44,0.045); }
-        .kpi-card.is-dark {
-            background: linear-gradient(145deg, #232323 0%, #383838 100%); color: #fff;
-            box-shadow: 0 14px 30px rgba(0,0,0,0.18);
+        .loader-overlay span {
+            font-weight: 700;
+            font-size: 0.7rem;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            text-transform: uppercase;
         }
-        .kpi-card:hover { transform: translateY(-3px); }
-        .kpi-card { transition: transform 0.3s ease; }
-        .kpi-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.9rem; }
-        .kpi-badge {
-            width: 38px; height: 38px; border-radius: 11px; display: flex; align-items: center; justify-content: center;
-        }
-        .kpi-badge.up { background: rgba(25,135,84,0.1); color: var(--up); }
-        .kpi-badge.down { background: rgba(220,53,69,0.1); color: var(--down); }
-        .kpi-badge.gold { background: rgba(197,160,89,0.18); color: #E4C589; }
-        .kpi-label { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.9px; color: var(--ink-soft); }
-        .kpi-card.is-dark .kpi-label { color: rgba(255,255,255,0.55); }
-        .kpi-value { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 1.85rem; margin: 2px 0 0; line-height: 1.1; }
-        .kpi-chips { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
-        .kpi-chip {
-            font-size: 0.68rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; letter-spacing: 0.3px;
-            background: rgba(0,0,0,0.035); color: var(--ink-soft);
-        }
-        .kpi-chip b { color: var(--ink); font-weight: 800; }
-        .kpi-chip.upi b { color: #0d6efd; }
-        @media (max-width: 767.98px) { .kpi-value { font-size: 1.55rem; } }
 
-        /* ---------- CHARTS ---------- */
-        .chart-wrap { position: relative; width: 100%; height: 250px; }
-        @media (max-width: 767.98px) { .chart-wrap { height: 210px; } }
-
-        /* ---------- CALENDAR ---------- */
-        .cal-nav-btn {
-            width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); background: #fff;
-            display: flex; align-items: center; justify-content: center; color: var(--ink); transition: 0.2s;
-        }
-        .cal-nav-btn:hover { background: var(--gold); border-color: var(--gold); color: #fff; }
-        .cal-month-label { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 1.05rem; color: var(--ink); margin: 0; }
-
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; }
-        .day-label { font-size: 0.62rem; font-weight: 800; text-transform: uppercase; padding-bottom: 6px; color: var(--ink-soft); letter-spacing: 0.5px; }
-        .calendar-day {
-            aspect-ratio: 1 / 1; background: var(--cream); border-radius: 10px; cursor: pointer;
-            font-weight: 700; font-size: 0.82rem; transition: 0.18s ease; border: 1px solid transparent;
-            position: relative; display: flex; align-items: center; justify-content: center; color: var(--ink);
-        }
-        .calendar-day:hover { background: #fff; border-color: var(--gold); color: var(--gold); transform: translateY(-2px); box-shadow: 0 6px 14px rgba(197,160,89,0.18); }
-        .calendar-day.is-today { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); color: var(--gold); }
-        .calendar-day.empty-slot { background: transparent; cursor: default; }
-        .calendar-day.empty-slot:hover { transform: none; box-shadow: none; border-color: transparent; }
-        .activity-dot { position: absolute; bottom: 5px; width: 5px; height: 5px; background-color: var(--gold); border-radius: 50%; }
-
-        /* ---------- TOP LISTS ---------- */
-        .rank-row { display: flex; align-items: center; gap: 12px; padding: 9px 0; }
-        .rank-badge {
-            width: 24px; height: 24px; border-radius: 50%; background: var(--gold-soft); color: var(--gold);
-            font-size: 0.68rem; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-        }
-        .rank-body { flex: 1; min-width: 0; }
-        .rank-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-        .rank-name { font-size: 0.83rem; font-weight: 700; color: var(--ink); text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
-        .rank-amt { font-size: 0.83rem; font-weight: 800; white-space: nowrap; }
-        .rank-bar-track { height: 4px; border-radius: 4px; background: rgba(0,0,0,0.05); margin-top: 6px; overflow: hidden; }
-        .rank-bar-fill { height: 100%; border-radius: 4px; }
-        .rank-bar-fill.up { background: var(--up); }
-        .rank-bar-fill.down { background: var(--down); }
-        .empty-note { color: var(--ink-soft); font-size: 0.82rem; font-style: italic; padding: 8px 0; }
-        .list-divider-md { border-color: var(--line) !important; }
-
-        /* ---------- MODAL ---------- */
-        #dayAuditModal .modal-content { border-radius: 20px; border: none; }
-        .audit-tile { padding: 1rem; text-align: center; }
-        .audit-tile-label { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; color: var(--ink-soft); margin-bottom: 4px; }
-        .audit-row { display: flex; align-items: center; gap: 12px; padding: 11px 0; }
-        .audit-icon { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .audit-icon.up { background: rgba(25,135,84,0.1); color: var(--up); }
-        .audit-icon.down { background: rgba(220,53,69,0.1); color: var(--down); }
-        .audit-body { flex: 1; min-width: 0; }
-        .audit-desc { font-weight: 700; font-size: 0.85rem; color: var(--ink); text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
-
-        /* ---------- RESPONSIVE ---------- */
-        @media (min-width: 768px) {
-            .border-end-md { border-right: 1px solid var(--line) !important; }
+        /* --- Charts --- */
+        .chart-wrap {
+            position: relative;
+            width: 100%;
+            height: 250px;
         }
         @media (max-width: 767.98px) {
-            .border-bottom-mobile { border-bottom: 1px solid var(--line) !important; }
-            .mobile-pb { padding-bottom: 1rem !important; margin-bottom: 1rem !important; }
-            .panel-pad { padding: 1.25rem; }
-            .analytics-title { font-size: 1.5rem; }
-            .period-picker { width: 100%; justify-content: space-between; }
+            .chart-wrap { height: 210px; }
+        }
+
+        /* --- Calendar Grid --- */
+        .action-btn {
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text-main);
+        }
+        .action-btn:hover { background: var(--bg-color); }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+            text-align: center;
+        }
+        .day-label {
+            font-size: 0.68rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            padding-bottom: 6px;
+            color: var(--text-muted);
+            letter-spacing: 0.06em;
+        }
+        .calendar-day {
+            aspect-ratio: 1 / 1;
+            background: var(--surface);
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.85rem;
+            border: 1px solid var(--border);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-main);
+            user-select: none;
+        }
+        .calendar-day:hover {
+            background: var(--bg-color);
+            border-color: var(--primary-dark);
+        }
+        .calendar-day.is-today {
+            border: 2px solid var(--primary-dark);
+            font-weight: 800;
+        }
+        .calendar-day.empty-slot {
+            background: transparent;
+            border-color: transparent;
+            cursor: default;
+        }
+        .activity-dot {
+            position: absolute;
+            bottom: 5px;
+            width: 5px;
+            height: 5px;
+            background-color: var(--credit);
+            border-radius: 50%;
+        }
+
+        /* --- Top Ranked Streams --- */
+        .rank-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 0;
+            border-bottom: 1px solid var(--border-light);
+        }
+        .rank-row:last-child { border-bottom: none; }
+        .rank-badge {
+            width: 22px;
+            height: 22px;
+            border-radius: 4px;
+            background: var(--bg-color);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            font-size: 0.68rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .rank-body { flex: 1; min-width: 0; }
+        .rank-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 8px;
+        }
+        .rank-name {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-main);
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        .rank-amt {
+            font-size: 0.8rem;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+        .rank-bar-track {
+            height: 4px;
+            border-radius: 2px;
+            background: var(--bg-color);
+            margin-top: 5px;
+            overflow: hidden;
+        }
+        .rank-bar-fill { height: 100%; }
+        .rank-bar-fill.up { background: var(--credit); }
+        .rank-bar-fill.down { background: var(--debit); }
+
+        .empty-note {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 16px 0;
+            text-align: center;
+        }
+
+        /* --- Day Audit Modal --- */
+        #dayAuditModal .modal-content {
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+        .audit-tile { padding: 12px; text-align: center; }
+        .audit-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+        }
+        .audit-desc {
+            font-weight: 700;
+            font-size: 0.82rem;
+            color: var(--text-main);
+        }
+        .badge-mode {
+            font-size: 0.65rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid var(--border);
+            background: var(--bg-color);
+            color: var(--text-main);
+        }
+
+        @media (min-width: 768px) {
+            .border-end-md { border-right: 1px solid var(--border-light) !important; }
+        }
+        @media (max-width: 767.98px) {
+            .border-bottom-mobile {
+                border-bottom: 1px solid var(--border-light) !important;
+                padding-bottom: 1rem !important;
+                margin-bottom: 1rem !important;
+            }
         }
     </style>
 </head>
 <body>
 
+    <script> window.APP_VERSION = 'v1.9.2'; </script>
     <script src="navbar.js"></script>
 
-    <main class="container-fluid py-4 mb-5 position-relative d-none" id="admin-content" style="z-index: 10;">
+    <main class="container-fluid py-4 mb-5 d-none" id="admin-content" style="max-width: 1280px;">
 
-        <!-- HEADER -->
-        <div class="analytics-head">
+        <!-- Header Section -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4 pb-3 border-bottom border-secondary-subtle gap-3">
             <div>
-                <div class="analytics-eyebrow">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>
-                    Performance Overview
-                </div>
-                <h3 class="analytics-title font-display">Business Analytics</h3>
-                <p class="analytics-sub mb-0">Visual insights and unified performance metrics</p>
+                <h4 class="fw-bold m-0 text-dark" style="letter-spacing: -0.02em;">Business Analytics</h4>
+                <p class="text-muted small fw-medium mb-0 mt-1">Monthly cashflow trends, cost distribution, and daily audit logs</p>
             </div>
 
-            <div class="period-picker">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                <div>
-                    <span class="small fw-bold text-uppercase d-block" style="font-size: 0.62rem; letter-spacing: 1px; color: var(--ink-soft);">Analysis Period</span>
-                    <input type="month" id="global-month-filter" class="form-control cursor-pointer" onchange="updateGlobalFilter()">
-                </div>
+            <div style="min-width: 180px;">
+                <label class="ent-label">Analysis Period</label>
+                <input type="month" id="global-month-filter" class="form-control fin-math" onchange="updateGlobalFilter()">
             </div>
         </div>
 
-        <!-- KPI ROW -->
+        <!-- KPI Row -->
         <div class="row g-3 mb-4">
+            <!-- Total Income -->
             <div class="col-12 col-md-5">
-                <div class="kpi-card is-light">
-                    <div class="kpi-top">
-                        <div>
-                            <div class="kpi-label">Total Income</div>
-                            <h4 class="kpi-value text-success">₹ <span id="mtd-income">0.00</span></h4>
-                        </div>
-                        <div class="kpi-badge up">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
-                        </div>
+                <div class="ent-card h-100 p-3 p-md-4 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="ent-label">Total Period Income</div>
+                        <h3 class="fw-bold text-success m-0 fin-math">₹ <span id="mtd-income">0.00</span></h3>
                     </div>
-                    <div class="kpi-chips">
-                        <span class="kpi-chip cash">CASH &nbsp;<b>₹<span id="mtd-cash-in">0.00</span></b></span>
-                        <span class="kpi-chip upi">UPI &nbsp;<b>₹<span id="mtd-upi-in">0.00</span></b></span>
+                    <div class="kpi-chips fin-math">
+                        <span class="kpi-chip">Cash: <b>₹ <span id="mtd-cash-in">0.00</span></b></span>
+                        <span class="kpi-chip">UPI: <b>₹ <span id="mtd-upi-in">0.00</span></b></span>
                     </div>
                 </div>
             </div>
 
+            <!-- Total Expense -->
             <div class="col-6 col-md-3">
-                <div class="kpi-card is-light">
-                    <div class="kpi-top">
-                        <div>
-                            <div class="kpi-label">Total Expense</div>
-                            <h4 class="kpi-value text-danger">₹ <span id="mtd-expense">0.00</span></h4>
-                        </div>
-                        <div class="kpi-badge down">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
-                        </div>
+                <div class="ent-card h-100 p-3 p-md-4 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="ent-label">Total Period Expense</div>
+                        <h3 class="fw-bold text-danger m-0 fin-math">₹ <span id="mtd-expense">0.00</span></h3>
                     </div>
+                    <div class="small text-muted fw-semibold mt-2" style="font-size: 0.7rem;">Excludes internal vault sweeps</div>
                 </div>
             </div>
 
+            <!-- Net Operating Profit -->
             <div class="col-6 col-md-4">
-                <div class="kpi-card is-dark">
-                    <div class="kpi-top">
-                        <div>
-                            <div class="kpi-label">Net Profit</div>
-                            <h4 class="kpi-value m-0" id="mtd-profit">₹ 0.00</h4>
-                        </div>
-                        <div class="kpi-badge gold">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 3"></path></svg>
-                        </div>
+                <div class="ent-card ent-header-dark h-100 p-3 p-md-4 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="ent-label ent-label-light">Net Operating Cashflow</div>
+                        <h3 class="fw-bold m-0 fin-math" id="mtd-profit">₹ 0.00</h3>
                     </div>
-                    <span class="small fw-semibold" style="color: rgba(255,255,255,0.5); font-size: 0.72rem;">Income minus expense, selected period</span>
+                    <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 600;" class="mt-2">INCOME MINUS EXPENSE (SELECTED MONTH)</div>
                 </div>
             </div>
         </div>
 
-        <!-- TOP CHARTS -->
+        <!-- Top Charts Row -->
         <div class="row g-4 mb-4">
             <div class="col-lg-8">
-                <div class="panel panel-pad">
-                    <div class="loader-overlay" id="loader-trend"><div class="loader-spin"></div><span>Crunching Data</span></div>
-                    <div class="panel-head">
-                        <h6 class="panel-title">
-                            <span class="panel-icon">
-                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-                            </span>
-                            Monthly Cashflow Trend
-                        </h6>
+                <div class="ent-card p-3 p-md-4 h-100">
+                    <div class="loader-overlay" id="loader-trend">
+                        <div class="loader-spin"></div>
+                        <span>Loading Trend</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                        <h6 class="fw-bold m-0 text-uppercase" style="font-size: 0.8rem; letter-spacing: 0.05em;">Monthly Cashflow Trend</h6>
+                        <span class="ent-label m-0">Daily Inflow vs Outflow</span>
                     </div>
                     <div class="chart-wrap">
                         <canvas id="cashflowChart"></canvas>
@@ -276,69 +392,75 @@
             </div>
 
             <div class="col-lg-4">
-                <div class="panel panel-pad">
-                    <div class="loader-overlay" id="loader-expense"><div class="loader-spin"></div><span>Crunching Data</span></div>
-                    <div class="panel-head">
-                        <h6 class="panel-title">
-                            <span class="panel-icon">
-                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>
-                            </span>
-                            Expense Distribution
-                        </h6>
+                <div class="ent-card p-3 p-md-4 h-100">
+                    <div class="loader-overlay" id="loader-expense">
+                        <div class="loader-spin"></div>
+                        <span>Loading Breakdown</span>
                     </div>
-                    <div class="chart-wrap" style="display:flex; justify-content:center;">
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                        <h6 class="fw-bold m-0 text-uppercase" style="font-size: 0.8rem; letter-spacing: 0.05em;">Expense Distribution</h6>
+                        <span class="ent-label m-0">By Category</span>
+                    </div>
+                    <div class="chart-wrap d-flex justify-content-center">
                         <canvas id="expenseChart"></canvas>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- BOTTOM: CALENDAR & METRICS -->
+        <!-- Bottom: Calendar & Period Performance -->
         <div class="row g-4 mb-5">
+            <!-- Activity Audit Calendar -->
             <div class="col-lg-5 order-2 order-lg-1">
-                <div class="panel panel-pad">
-                    <div class="loader-overlay" id="loader-calendar"><div class="loader-spin"></div><span>Syncing</span></div>
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <button class="cal-nav-btn" onclick="changeGlobalMonth(-1)" aria-label="Previous month">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                        </button>
-                        <h6 class="cal-month-label" id="monthYearDisplay"></h6>
-                        <button class="cal-nav-btn" onclick="changeGlobalMonth(1)" aria-label="Next month">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                        </button>
+                <div class="ent-card p-3 p-md-4 h-100">
+                    <div class="loader-overlay" id="loader-calendar">
+                        <div class="loader-spin"></div>
+                        <span>Syncing Calendar</span>
                     </div>
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+                        <button class="action-btn" onclick="changeGlobalMonth(-1)" aria-label="Previous month">&larr;</button>
+                        <h6 class="fw-bold m-0 text-uppercase fin-math" style="font-size: 0.82rem; letter-spacing: 0.05em;" id="monthYearDisplay">Month Year</h6>
+                        <button class="action-btn" onclick="changeGlobalMonth(1)" aria-label="Next month">&rarr;</button>
+                    </div>
+
                     <div class="calendar-grid mb-1">
-                        <div class="day-label">Sun</div><div class="day-label">Mon</div><div class="day-label">Tue</div>
-                        <div class="day-label">Wed</div><div class="day-label">Thu</div><div class="day-label">Fri</div><div class="day-label">Sat</div>
+                        <div class="day-label">Sun</div>
+                        <div class="day-label">Mon</div>
+                        <div class="day-label">Tue</div>
+                        <div class="day-label">Wed</div>
+                        <div class="day-label">Thu</div>
+                        <div class="day-label">Fri</div>
+                        <div class="day-label">Sat</div>
                     </div>
-                    <div class="calendar-grid" id="calendarBody"></div>
-                    <p class="text-center small mt-3 mb-0" style="color: var(--ink-soft);">
-                        <span class="d-inline-block rounded-circle me-1" style="width:5px;height:5px;background:var(--gold);"></span>
-                        Days with recorded activity &middot; tap a date to audit it
-                    </p>
+                    <div class="calendar-grid fin-math" id="calendarBody"></div>
+
+                    <div class="d-flex align-items-center justify-content-center gap-2 small mt-3 pt-2 border-top text-muted fw-semibold" style="font-size: 0.72rem;">
+                        <span class="d-inline-block rounded-circle" style="width: 6px; height: 6px; background: var(--credit);"></span>
+                        <span>Active ledger date &bull; Click any day to inspect EOD audit</span>
+                    </div>
                 </div>
             </div>
 
+            <!-- Period Performance Rankings -->
             <div class="col-lg-7 order-1 order-lg-2">
-                <div class="panel panel-pad h-100 d-flex flex-column">
-                    <div class="loader-overlay" id="loader-metrics"><div class="loader-spin"></div><span>Calculating</span></div>
-                    <div class="panel-head mb-2">
-                        <h6 class="panel-title">
-                            <span class="panel-icon">
-                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>
-                            </span>
-                            Period Performance
-                        </h6>
+                <div class="ent-card p-3 p-md-4 h-100 d-flex flex-column">
+                    <div class="loader-overlay" id="loader-metrics">
+                        <div class="loader-spin"></div>
+                        <span>Calculating</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                        <h6 class="fw-bold m-0 text-uppercase" style="font-size: 0.8rem; letter-spacing: 0.05em;">Period Performance Breakdown</h6>
+                        <span class="ent-label m-0">Top 5 Classifications</span>
                     </div>
 
                     <div class="row g-4 flex-grow-1">
-                        <div class="col-12 col-md-6 border-end-md border-bottom-mobile mobile-pb">
-                            <h6 class="small fw-bold mb-1 text-uppercase pb-2 border-bottom list-divider-md" style="letter-spacing: 0.6px; color: var(--ink-soft);">Top Income Streams</h6>
-                            <div id="top-income-list"></div>
+                        <div class="col-12 col-md-6 border-end-md border-bottom-mobile">
+                            <div class="ent-label pb-2 border-bottom">Top Income Streams</div>
+                            <div id="top-income-list" class="fin-math"></div>
                         </div>
                         <div class="col-12 col-md-6">
-                            <h6 class="small fw-bold mb-1 text-uppercase pb-2 border-bottom list-divider-md" style="letter-spacing: 0.6px; color: var(--ink-soft);">Top Cost Centers</h6>
-                            <div id="top-expense-list"></div>
+                            <div class="ent-label pb-2 border-bottom">Top Cost Centers</div>
+                            <div id="top-expense-list" class="fin-math"></div>
                         </div>
                     </div>
                 </div>
@@ -349,34 +471,31 @@
     <!-- DAY AUDIT MODAL -->
     <div class="modal fade" id="dayAuditModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-            <div class="modal-content shadow-lg">
-                <div class="modal-header border-bottom p-4">
-                    <div class="d-flex align-items-center gap-3">
-                        <span class="kpi-badge gold" style="background: var(--gold-soft); color: var(--gold);">
-                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                        </span>
-                        <div>
-                            <h5 class="fw-bold m-0 text-dark font-display" id="auditDateLabel">Date Audit</h5>
-                            <small class="text-muted fw-semibold">End of Day Snapshot</small>
-                        </div>
+            <div class="modal-content">
+                <div class="modal-header border-bottom px-4 py-3 bg-light">
+                    <div>
+                        <div class="ent-label m-0">End of Day Audit Snapshot</div>
+                        <h6 class="fw-bold m-0 text-dark fin-math mt-1" id="auditDateLabel">YYYY-MM-DD</h6>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-0">
-                    <div class="row g-0 border-bottom text-center" style="background: var(--cream);">
-                        <div class="col-6 audit-tile border-end" style="border-color: var(--line) !important;">
-                            <div class="audit-tile-label">Cash Tally (In / Out)</div>
-                            <span class="text-success fw-bold">₹ <span id="auditCashIn">0</span></span> / 
-                            <span class="text-danger fw-bold">₹ <span id="auditCashOut">0</span></span>
+                    <div class="row g-0 border-bottom text-center bg-white fin-math">
+                        <div class="col-6 audit-tile border-end">
+                            <div class="ent-label mb-1">Cash Tally (In / Out)</div>
+                            <span class="text-success fw-bold small">₹ <span id="auditCashIn">0.00</span></span>
+                            <span class="text-muted mx-1">/</span>
+                            <span class="text-danger fw-bold small">₹ <span id="auditCashOut">0.00</span></span>
                         </div>
                         <div class="col-6 audit-tile">
-                            <div class="audit-tile-label">UPI Tally (In / Out)</div>
-                            <span class="text-success fw-bold">₹ <span id="auditUpiIn">0</span></span> / 
-                            <span class="text-danger fw-bold">₹ <span id="auditUpiOut">0</span></span>
+                            <div class="ent-label mb-1">UPI Tally (In / Out)</div>
+                            <span class="text-success fw-bold small">₹ <span id="auditUpiIn">0.00</span></span>
+                            <span class="text-muted mx-1">/</span>
+                            <span class="text-danger fw-bold small">₹ <span id="auditUpiOut">0.00</span></span>
                         </div>
                     </div>
-                    <div class="p-3" style="max-height: 40vh; overflow-y: auto;">
-                        <ul class="list-group list-group-flush" id="auditTxList"></ul>
+                    <div class="px-3 py-2" style="max-height: 42vh; overflow-y: auto;">
+                        <ul class="list-group list-group-flush fin-math" id="auditTxList"></ul>
                     </div>
                 </div>
             </div>
@@ -384,334 +503,6 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-    <script>
-        let currentShopId = null;
-        let isAdmin = false;
-
-        // Chart Instances
-        let cashflowChartInst = null;
-        let expenseChartInst = null;
-
-        // Global Time State
-        let currentYear = new Date().getFullYear();
-        let currentMonth = new Date().getMonth(); // 0-11
-        let globalActivityDates = [];
-
-        window.onload = async () => {
-            // Set Default Input Value
-            const monthStr = String(currentMonth + 1).padStart(2, '0');
-            document.getElementById('global-month-filter').value = `${currentYear}-${monthStr}`;
-
-            try {
-                const { data: userData } = await supabaseClient.auth.getUser();
-                if (userData && userData.user) {
-                    const { data: profile } = await supabaseClient.from('user_profiles').select('role, shop_id').eq('id', userData.user.id).single();
-                    if (profile) {
-                        if (profile.role !== 'admin') {
-                            window.location.replace('dashboard.html');
-                            return;
-                        }
-                        currentShopId = profile.shop_id;
-                        isAdmin = true;
-
-                        document.getElementById('admin-content').classList.remove('d-none');
-                        await fetchAnalyticsData();
-                    }
-                }
-            } catch (err) {
-                console.error("Analytics Init Error:", err);
-            }
-        };
-
-        async function updateGlobalFilter() {
-            const val = document.getElementById('global-month-filter').value;
-            if (!val) return;
-            const parts = val.split('-');
-            currentYear = parseInt(parts[0]);
-            currentMonth = parseInt(parts[1]) - 1;
-            await fetchAnalyticsData();
-        }
-
-        async function changeGlobalMonth(step) {
-            currentMonth += step;
-            if (currentMonth > 11) { currentMonth = 0; currentYear += 1; }
-            if (currentMonth < 0) { currentMonth = 11; currentYear -= 1; }
-
-            const monthStr = String(currentMonth + 1).padStart(2, '0');
-            document.getElementById('global-month-filter').value = `${currentYear}-${monthStr}`;
-            await fetchAnalyticsData();
-        }
-
-        async function fetchAnalyticsData() {
-            document.getElementById('loader-trend').classList.remove('d-none');
-            document.getElementById('loader-expense').classList.remove('d-none');
-            document.getElementById('loader-metrics').classList.remove('d-none');
-            document.getElementById('loader-calendar').classList.remove('d-none');
-
-            // Exact bounds for the selected month
-            const start = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-01T00:00:00.000Z`;
-            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-            const end = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(daysInMonth).padStart(2,'0')}T23:59:59.999Z`;
-
-            const { data: txns, error } = await supabaseClient.from('daily_transactions')
-                .select('*')
-                .eq('shop_id', currentShopId)
-                .gte('created_at', start)
-                .lte('created_at', end)
-                .order('created_at', { ascending: true });
-
-            if (error) { console.error(error); return; }
-
-            processTrendData(txns, currentYear, currentMonth, daysInMonth);
-            processMTDData(txns);
-            extractActivityDates(txns);
-            renderCalendar(daysInMonth);
-        }
-
-        function extractActivityDates(txns) {
-            const dates = new Set();
-            txns.forEach(t => {
-                const dStr = t.created_at.split('T')[0];
-                dates.add(dStr);
-            });
-            globalActivityDates = Array.from(dates);
-        }
-
-        function processTrendData(txns, year, month, daysInMonth) {
-            const datesMap = {};
-            const today = new Date();
-            let endDay = daysInMonth;
-
-            // DYNAMIC FIX: Stop plotting on 'today' if we are looking at the current active month
-            if (year === today.getFullYear() && month === today.getMonth()) {
-                endDay = today.getDate();
-            }
-
-            for(let i = 1; i <= endDay; i++) {
-                let dStr = `${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
-                datesMap[dStr] = { in: 0, out: 0 };
-            }
-
-            txns.forEach(t => {
-                const dStr = t.created_at.split('T')[0];
-                if (!datesMap[dStr]) return; // Ignores days outside bounds
-
-                const isSweep = t.reference_note && t.reference_note.includes('Transferred to Master Vault');
-                if (t.transaction_type === 'INCOME') datesMap[dStr].in += parseFloat(t.amount);
-                if (t.transaction_type === 'EXPENSE' && !isSweep) datesMap[dStr].out += parseFloat(t.amount);
-            });
-
-            const labels = Object.keys(datesMap).sort();
-            const incomeData = labels.map(l => datesMap[l].in);
-            const expenseData = labels.map(l => datesMap[l].out);
-            const displayLabels = labels.map(l => {
-                const p = l.split('-'); return `${p[2]}`; // Show Day Number
-            });
-
-            document.getElementById('loader-trend').classList.add('d-none');
-
-            if(cashflowChartInst) cashflowChartInst.destroy();
-            cashflowChartInst = new Chart(document.getElementById('cashflowChart'), {
-                type: 'line',
-                data: {
-                    labels: displayLabels,
-                    datasets: [
-                        { label: 'Income', data: incomeData, borderColor: '#198754', backgroundColor: 'rgba(25,135,84,0.08)', fill: true, tension: 0.4, pointRadius: 0, borderWidth: 2.5 },
-                        { label: 'Expense', data: expenseData, borderColor: '#DC3545', backgroundColor: 'rgba(220,53,69,0.08)', fill: true, tension: 0.4, pointRadius: 0, borderWidth: 2.5 }
-                    ]
-                },
-                options: {
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'top', labels: { boxWidth: 10, usePointStyle: true, font: { family: 'Public Sans', weight: '600', size: 11 } } } },
-                    scales: {
-                        x: { grid: { display: false }, ticks: { font: { size: 10 } } },
-                        y: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { size: 10 } } }
-                    }
-                }
-            });
-        }
-
-        function processMTDData(txns) {
-            let mtdIncome = 0;
-            let mtdExpense = 0;
-            let mtdCashIncome = 0;
-            let mtdUpiIncome = 0;
-
-            let incomeCats = {};
-            let expenseCats = {};
-
-            txns.forEach(t => {
-                const amt = parseFloat(t.amount);
-                const isSweep = t.reference_note && t.reference_note.includes('Transferred to Master Vault');
-                const cat = (t.category || 'Other').toUpperCase();
-
-                if (t.transaction_type === 'INCOME') {
-                    mtdIncome += amt;
-                    incomeCats[cat] = (incomeCats[cat] || 0) + amt;
-
-                    if (t.payment_method === 'CASH') mtdCashIncome += amt;
-                    if (t.payment_method === 'UPI') mtdUpiIncome += amt;
-
-                } else if (t.transaction_type === 'EXPENSE' && !isSweep) {
-                    mtdExpense += amt;
-                    expenseCats[cat] = (expenseCats[cat] || 0) + amt;
-                }
-            });
-
-            // Populate Main Values
-            document.getElementById('mtd-income').innerText = mtdIncome.toLocaleString('en-IN', {minimumFractionDigits: 2});
-            document.getElementById('mtd-expense').innerText = mtdExpense.toLocaleString('en-IN', {minimumFractionDigits: 2});
-
-            // Populate Splits
-            document.getElementById('mtd-cash-in').innerText = mtdCashIncome.toLocaleString('en-IN', {minimumFractionDigits: 2});
-            document.getElementById('mtd-upi-in').innerText = mtdUpiIncome.toLocaleString('en-IN', {minimumFractionDigits: 2});
-
-            const net = mtdIncome - mtdExpense;
-            const netEl = document.getElementById('mtd-profit');
-            netEl.innerText = (net >= 0 ? '+' : '') + '₹ ' + net.toLocaleString('en-IN', {minimumFractionDigits: 2});
-            netEl.className = 'kpi-value m-0 ' + (net >= 0 ? 'text-success' : 'text-danger');
-
-            // Top 5 Income (with proportional bars)
-            const sortedInc = Object.keys(incomeCats).map(k => ({name: k, total: incomeCats[k]})).sort((a,b) => b.total - a.total).slice(0,5);
-            const maxInc = sortedInc.length ? sortedInc[0].total : 0;
-            let incHtml = '';
-            sortedInc.forEach((i, idx) => {
-                const pct = maxInc > 0 ? Math.max(6, (i.total / maxInc) * 100) : 0;
-                incHtml += `
-                    <div class="rank-row">
-                        <div class="rank-badge">${idx + 1}</div>
-                        <div class="rank-body">
-                            <div class="rank-top">
-                                <span class="rank-name">${i.name}</span>
-                                <span class="rank-amt text-success">₹ ${i.total.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
-                            </div>
-                            <div class="rank-bar-track"><div class="rank-bar-fill up" style="width:${pct}%;"></div></div>
-                        </div>
-                    </div>`;
-            });
-            document.getElementById('top-income-list').innerHTML = incHtml || '<p class="empty-note mb-0">No income recorded for this period.</p>';
-
-            // Top 5 Expense (with proportional bars)
-            const sortedExp = Object.keys(expenseCats).map(k => ({name: k, total: expenseCats[k]})).sort((a,b) => b.total - a.total).slice(0,5);
-            const maxExp = sortedExp.length ? sortedExp[0].total : 0;
-            let expHtml = '';
-            sortedExp.forEach((e, idx) => {
-                const pct = maxExp > 0 ? Math.max(6, (e.total / maxExp) * 100) : 0;
-                expHtml += `
-                    <div class="rank-row">
-                        <div class="rank-badge">${idx + 1}</div>
-                        <div class="rank-body">
-                            <div class="rank-top">
-                                <span class="rank-name">${e.name}</span>
-                                <span class="rank-amt text-danger">₹ ${e.total.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
-                            </div>
-                            <div class="rank-bar-track"><div class="rank-bar-fill down" style="width:${pct}%;"></div></div>
-                        </div>
-                    </div>`;
-            });
-            document.getElementById('top-expense-list').innerHTML = expHtml || '<p class="empty-note mb-0">No expenses recorded for this period.</p>';
-
-            document.getElementById('loader-metrics').classList.add('d-none');
-            document.getElementById('loader-expense').classList.add('d-none');
-
-            // Draw Doughnut
-            if(expenseChartInst) expenseChartInst.destroy();
-            expenseChartInst = new Chart(document.getElementById('expenseChart'), {
-                type: 'doughnut',
-                data: {
-                    labels: sortedExp.map(e => e.name),
-                    datasets: [{ data: sortedExp.map(e => e.total), backgroundColor: ['#2C2C2C', '#C5A059', '#198754', '#DC3545', '#6c757d'], borderWidth: 0 }]
-                },
-                options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, usePointStyle: true, font: { size: 10, family: 'Public Sans', weight: '600' } } } }, cutout: '72%' }
-            });
-        }
-
-        // --- CALENDAR LOGIC ---
-        function renderCalendar(daysInMonth) {
-            document.getElementById('monthYearDisplay').innerText = new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long', year: 'numeric' });
-
-            const calBody = document.getElementById('calendarBody');
-            calBody.innerHTML = '';
-
-            const firstDayIndex = new Date(currentYear, currentMonth, 1).getDay(); // Sunday = 0
-            const today = new Date();
-            const isCurrentMonth = (currentYear === today.getFullYear() && currentMonth === today.getMonth());
-
-            for (let i = 0; i < firstDayIndex; i++) calBody.innerHTML += `<div class="calendar-day empty-slot"></div>`;
-
-            for (let day = 1; day <= daysInMonth; day++) {
-                let mStr = (currentMonth + 1).toString().padStart(2, '0');
-                let dStr = day.toString().padStart(2, '0');
-                let dateKey = `${currentYear}-${mStr}-${dStr}`;
-
-                let dotHtml = globalActivityDates.includes(dateKey) ? `<div class="activity-dot"></div>` : '';
-                let todayClass = (isCurrentMonth && day === today.getDate()) ? ' is-today' : '';
-                calBody.innerHTML += `<div class="calendar-day${todayClass}" onclick="fetchDayAudit('${dateKey}')">${day}${dotHtml}</div>`;
-            }
-
-            document.getElementById('loader-calendar').classList.add('d-none');
-        }
-
-        // --- DAY AUDIT LOGIC ---
-        async function fetchDayAudit(dateKey) {
-            document.getElementById('auditDateLabel').innerText = dateKey;
-
-            const start = `${dateKey}T00:00:00.000Z`;
-            const end = `${dateKey}T23:59:59.999Z`;
-
-            const { data: txns, error } = await supabaseClient.from('daily_transactions').select('*')
-                .eq('shop_id', currentShopId).gte('created_at', start).lte('created_at', end).order('created_at', {ascending: false});
-
-            if(error) return;
-
-            let cIn = 0, cOut = 0, uIn = 0, uOut = 0;
-            const listEl = document.getElementById('auditTxList');
-            listEl.innerHTML = '';
-
-            if(!txns || txns.length === 0) {
-                listEl.innerHTML = '<li class="list-group-item text-center border-0 py-4 empty-note">No activity on this date.</li>';
-            } else {
-                txns.forEach(tx => {
-                    const amt = parseFloat(tx.amount);
-                    if (tx.transaction_type === 'INCOME') {
-                        if (tx.payment_method === 'CASH') cIn += amt; else uIn += amt;
-                    } else {
-                        if (tx.payment_method === 'CASH') cOut += amt; else uOut += amt;
-                    }
-
-                    const isIncome = tx.transaction_type === 'INCOME';
-                    let color = isIncome ? 'success' : 'danger';
-                    let sign = isIncome ? '+' : '-';
-                    let desc = tx.reference_note || tx.category.toUpperCase();
-                    let arrowPath = isIncome
-                        ? '<line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline>'
-                        : '<line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline>';
-
-                    listEl.innerHTML += `
-                        <li class="list-group-item px-0 bg-transparent border-0 border-bottom">
-                            <div class="audit-row">
-                                <div class="audit-icon ${isIncome ? 'up' : 'down'}">
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${arrowPath}</svg>
-                                </div>
-                                <div class="audit-body">
-                                    <div class="audit-desc">${desc}</div>
-                                    <span class="badge bg-light text-dark border px-2 mt-1" style="font-size:0.62rem;">${tx.payment_method}</span>
-                                </div>
-                                <span class="fw-bold text-${color}">${sign}₹ ${amt.toLocaleString('en-IN', {minimumFractionDigits:2})}</span>
-                            </div>
-                        </li>
-                    `;
-                });
-            }
-
-            document.getElementById('auditCashIn').innerText = cIn.toLocaleString('en-IN', {minimumFractionDigits:2});
-            document.getElementById('auditCashOut').innerText = cOut.toLocaleString('en-IN', {minimumFractionDigits:2});
-            document.getElementById('auditUpiIn').innerText = uIn.toLocaleString('en-IN', {minimumFractionDigits:2});
-            document.getElementById('auditUpiOut').innerText = uOut.toLocaleString('en-IN', {minimumFractionDigits:2});
-
-            new bootstrap.Modal(document.getElementById('dayAuditModal')).show();
-        }
-    </script>
+    <script src="summary.js"></script>
 </body>
 </html>
