@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master Ledger & Unified Cash</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Enterprise Unified Ledger</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -13,84 +13,226 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
-        body { font-family: 'Public Sans', sans-serif; background-color: #FDFBF7; }
-        .card-hover { transition: transform 0.3s ease, box-shadow 0.3s ease; border-radius: 16px; border: 1px solid rgba(197, 160, 89, 0.15); }
-        .card-hover:hover { box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08); transform: translateY(-3px); }
-        .text-gold { color: #C5A059; }
-        .bg-gold-subtle { background-color: rgba(197, 160, 89, 0.1); }
-        .border-gold { border-color: rgba(197, 160, 89, 0.3) !important; }
-        .form-control, .form-select { background: #F8F9FA; border: 1px solid #EAE0D5; padding: 10px 15px; border-radius: 10px; font-weight: 500; transition: 0.2s; }
-        .form-control:focus, .form-select:focus { background: #FFF; box-shadow: 0 0 0 4px rgba(197, 160, 89, 0.15); border-color: #C5A059; outline: none; }
-        .field-label { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #888; letter-spacing: 0.5px; margin-bottom: 6px; display: block; }
-        .btn-custom { background-color: #2C2C2C; color: white; border: none; font-weight: 800; padding: 12px 20px; border-radius: 10px; transition: 0.2s; letter-spacing: 0.5px; }
-        .btn-custom:hover { background-color: #1a1a1a; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.15); color: white; }
-        .btn-gold { background-color: #C5A059; color: white; }
-        .btn-gold:hover { background-color: #b08d4b; color: white; }
-        .action-btn { font-size: 0.8rem; font-weight: 700; padding: 6px 12px; border-radius: 6px; border: 1px solid #EAE0D5; background: #fff; transition: 0.2s; }
-        .action-btn:hover { background: #f8f9fa; border-color: #C5A059; }
-        .action-btn.text-danger:hover { border-color: #dc3545; background: #fdf2f2; }
-        .empty-state { display: flex; align-items: center; justify-content: center; padding: 40px; color: #9ca3af; font-size: 0.95em; text-align: center; flex-direction: column; }
+        :root {
+            --bg-color: #f3f4f6;
+            --surface: #ffffff;
+            --border: #d1d5db;
+            --border-light: #e5e7eb;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            --primary-dark: #0f172a;
+            --credit: #16a34a;
+            --debit: #dc2626;
+            --radius: 6px;
+        }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif; 
+            background-color: var(--bg-color); 
+            color: var(--text-main);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .fin-math {
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.02em;
+        }
+
+        /* --- Enterprise Components --- */
+        .ent-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
         
+        .ent-header-dark {
+            background: var(--primary-dark);
+            color: white;
+            border: 1px solid var(--primary-dark);
+        }
+
+        .ent-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            display: block;
+        }
+        
+        .ent-label-light { color: #94a3b8; }
+
+        /* --- Form Controls --- */
+        .form-control, .form-select {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-main);
+            transition: none; 
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-dark);
+            box-shadow: 0 0 0 1px var(--primary-dark);
+            outline: none;
+        }
+
+        /* --- Buttons --- */
+        .ent-btn {
+            background-color: var(--primary-dark);
+            color: white;
+            border: 1px solid var(--primary-dark);
+            font-weight: 700;
+            font-size: 0.8125rem;
+            padding: 10px 16px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            transition: none;
+        }
+        .ent-btn:hover { background-color: #000; color: white; }
+        
+        .ent-btn-outline {
+            background-color: transparent;
+            color: var(--primary-dark);
+            border: 1px solid var(--border);
+            font-weight: 700;
+            font-size: 0.8125rem;
+            padding: 10px 16px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .ent-btn-outline:hover { background-color: var(--bg-color); border-color: var(--primary-dark); }
+        
+        .action-btn {
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text-main);
+        }
+        .action-btn:hover { background: var(--bg-color); }
+        .action-btn.danger { color: var(--debit); }
+        .action-btn.danger:hover { background: #fef2f2; border-color: var(--debit); }
+
+        /* --- Table Strict --- */
+        .ent-table { font-size: 0.8125rem; margin: 0; }
+        .ent-table thead th {
+            background: var(--bg-color);
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            border-bottom: 2px solid var(--border) !important;
+            padding: 10px 16px;
+        }
+        .ent-table td {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border-light);
+            vertical-align: middle;
+        }
+        .ent-table tbody tr:hover { background: #f9fafb; }
+        
+        .tx-group { font-weight: 700; color: var(--text-main); }
+        .tx-party { color: var(--text-muted); font-size: 0.75rem; font-weight: 600; }
+        
+        .badge-mode {
+            font-size: 0.65rem; font-weight: 800; text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 3px 6px; border-radius: 3px; border: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        .empty-state { display: flex; align-items: center; justify-content: center; padding: 40px; color: var(--text-muted); font-size: 0.875rem; font-weight: 600; text-align: center; }
+
+        /* --- Mobile Table Hack --- */
         @media (max-width: 768px) {
             .mobile-hide { display: none !important; }
             .filter-group { flex-direction: column; align-items: stretch !important; width: 100%; }
-            .filter-group > * { margin-bottom: 10px; }
+            .filter-group > * { margin-bottom: 10px; width: 100% !important; }
+            
+            .ent-table thead { display: none; }
+            .ent-table, .ent-table tbody, .ent-table tr, .ent-table td { display: block; width: 100%; }
+            .ent-table tr {
+                background: var(--surface);
+                border: 1px solid var(--border) !important;
+                border-radius: var(--radius);
+                margin-bottom: 10px;
+                padding: 4px 12px;
+            }
+            .ent-table td {
+                display: flex; justify-content: space-between; align-items: center;
+                padding: 8px 0; border: none; border-bottom: 1px solid var(--border-light);
+                text-align: right;
+            }
+            .ent-table td:last-child { border-bottom: none; }
+            .ent-table td::before {
+                content: attr(data-label); font-weight: 700; font-size: 0.7rem; 
+                color: var(--text-muted); text-transform: uppercase; text-align: left;
+                letter-spacing: 0.05em;
+            }
+            .tx-group, .tx-party { text-align: right; }
         }
 
+        /* --- Print Styles --- */
         @media print {
             @page { size: A4 portrait; margin: 15mm; }
-            body { background-color: #fff !important; margin: 0; padding: 0; }
+            body { background-color: #fff !important; margin: 0; padding: 0; color: #000; }
             #sys-sidebar, .status-bar, .no-print, .filter-group { display: none !important; }
             .main-content-wrapper { margin: 0 !important; padding: 0 !important; }
-            .card { box-shadow: none !important; border: 1px solid #ddd !important; border-radius: 0 !important; }
+            .ent-card { box-shadow: none !important; border: 1px solid #000 !important; border-radius: 0 !important; margin-bottom: 20px; }
             .mobile-hide { display: table-cell !important; } 
-            .badge { border: 1px solid #000 !important; color: #000 !important; background: transparent !important; }
-            th, td { font-size: 11px !important; padding: 8px !important; }
+            .badge-mode { border: 1px solid #000 !important; color: #000 !important; background: transparent !important; }
+            th, td { font-size: 11px !important; padding: 6px !important; border-color: #000 !important; color: #000 !important; }
         }
     </style>
+<base target="_blank">
 </head>
 <body>
 
     <script> window.APP_VERSION = 'v1.9.1'; </script>
     <script src="navbar.js"></script>
 
-    <main class="container-fluid py-4 mb-5 d-none" id="admin-content">
+    <main class="container-fluid py-4 mb-5 d-none" id="admin-content" style="max-width: 1280px;">
         
-        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4 pb-3 border-bottom">
+        <!-- Header Section -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4 pb-3 border-bottom border-secondary-subtle">
             <div>
-                <h3 class="fw-bold m-0" style="color: #2C2C2C;">Unified Cash Ledger</h3>
-                <p class="text-muted small fw-semibold mb-0 mt-1">Master transaction history and manual capital adjustments</p>
+                <h4 class="fw-bold m-0 text-dark" style="letter-spacing: -0.02em;">Unified Cash Ledger</h4>
+                <p class="text-muted small fw-medium mb-0 mt-1">Master transaction history and manual capital adjustments</p>
             </div>
         </div>
 
-        <!-- VAULT HERO CARD (MOBILE OVERLAY FIX APPLIED) -->
-        <div class="card card-hover border-0 shadow-lg mb-4" style="background: linear-gradient(135deg, #1C1C1C 0%, #3A3A3A 100%); color: white; border-radius: 20px;">
-            <div class="card-body p-4 p-md-5 position-relative overflow-hidden">
-                <div class="d-flex flex-column flex-md-row justify-content-between align-items-center position-relative" style="z-index: 2;">
-                    
-                    <div class="text-center text-md-start mb-4 mb-md-0 w-100">
-                        <span class="badge bg-gold-subtle text-gold px-3 py-1 rounded-pill fw-bold mb-3" style="letter-spacing: 1px; border: 1px solid rgba(197,160,89,0.3);">
-                            🏦 UNIFIED CASH BALANCE
-                        </span>
-                        <h1 class="display-4 fw-bold mb-0 text-white">₹ <span id="vault-balance">0.00</span></h1>
-                    </div>
-
-                    <div class="d-flex flex-column flex-md-row gap-2 w-100 w-md-auto no-print">
-                        <button class="btn btn-custom btn-gold shadow-sm w-100" onclick="openAddFundsModal()">+ DEPOSIT</button>
-                        <button class="btn btn-light fw-bold shadow-sm w-100" style="border-radius: 10px; color: #2C2C2C;" onclick="openWithdrawModal()">- WITHDRAW</button>
-                    </div>
-
+        <!-- Master Vault Hero Card -->
+        <div class="ent-card ent-header-dark mb-4 p-4 p-md-5">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
+                
+                <div class="text-center text-md-start mb-4 mb-md-0 w-100">
+                    <div class="ent-label ent-label-light mb-2">Unified Cash Balance</div>
+                    <h1 class="fw-bold m-0 fin-math" style="letter-spacing: -0.03em; font-size: 2.5rem;">₹ <span id="vault-balance">0.00</span></h1>
                 </div>
-                <!-- SVG PUSHED TO BACKGROUND -->
-                <div class="position-absolute opacity-10 pe-none" style="z-index: 0; right: -20px; bottom: -20px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" fill="currentColor" viewBox="0 0 16 16"><path d="M4 10.781c.148 1.667 1.513 2.85 3.591 3.003V15h1.043v-1.216c2.27-.179 3.678-1.438 3.678-3.3 0-1.59-.947-2.51-2.956-3.028l-.722-.187V3.467c1.122.11 1.879.714 2.07 1.616h1.47c-.166-1.6-1.54-2.748-3.54-2.875V1H7.591v1.233c-1.939.23-3.27 1.472-3.27 3.156 0 1.454.966 2.483 2.661 2.917l.61.162v4.031c-1.149-.17-1.94-.8-2.131-1.718H4zm3.391-3.836c-1.043-.263-1.6-.825-1.6-1.616 0-.944.704-1.641 1.8-1.828v3.495l-.2-.05zm1.591 1.872c1.287.323 1.852.859 1.852 1.769 0 1.097-.826 1.828-2.2 1.939V8.73l.348.086z"/></svg>
+
+                <div class="d-flex flex-column flex-md-row gap-2 w-100 w-md-auto no-print">
+                    <button class="ent-btn bg-white text-dark w-100" style="border-color: white;" onclick="openAddFundsModal()">+ Deposit Capital</button>
+                    <button class="ent-btn-outline text-white w-100" style="border-color: rgba(255,255,255,0.3);" onclick="openWithdrawModal()">- Withdraw</button>
                 </div>
+
             </div>
         </div>
 
-        <div class="card bg-white border-0 shadow-sm p-3 mb-4 rounded-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 no-print">
+        <!-- Filter Bar -->
+        <div class="ent-card p-3 mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 no-print">
             <div class="filter-group d-flex align-items-center gap-2 w-100">
-                <select id="ledger-source-filter" class="form-select fw-bold w-auto" onchange="applyFilters()">
+                <select id="ledger-source-filter" class="form-select w-auto" style="min-width: 220px;" onchange="applyFilters()">
                     <option value="ALL">All Transactions</option>
                     <option value="RESERVE">Capital Adjustments Only</option>
                     <option value="DAILY">Daily Cash Flows Only</option>
@@ -99,24 +241,25 @@
                 <span class="mobile-hide text-muted fw-bold px-2">to</span>
                 <input type="date" id="filter-date-end" class="form-control w-auto" onchange="applyFilters()">
             </div>
-            <button class="btn btn-outline-dark fw-bold px-4" style="border-radius: 10px; white-space: nowrap;" onclick="window.print()">Download PDF</button>
+            <button class="ent-btn-outline px-4" style="white-space: nowrap;" onclick="window.print()">Download PDF</button>
         </div>
 
-        <div class="card card-hover bg-white border-0 shadow-sm overflow-hidden" id="pdf-export-area">
-            <div class="card-header bg-white border-bottom p-4 d-flex justify-content-between align-items-center">
-                <h5 class="fw-bold m-0" style="color: #2C2C2C;">Consolidated Ledger</h5>
-                <span class="badge bg-light text-muted border px-3 py-2" id="record-count">Loading...</span>
+        <!-- Data Table -->
+        <div class="ent-card overflow-hidden" id="pdf-export-area">
+            <div class="p-3 border-bottom bg-white d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold m-0 text-uppercase" style="letter-spacing: 0.05em;">Consolidated Ledger</h6>
+                <span class="badge-mode bg-light text-muted" id="record-count">Loading...</span>
             </div>
             
-            <div class="table-responsive">
-                <table class="table align-middle mb-0 table-hover">
-                    <thead class="bg-light" style="border-top: 1px solid #F0F0F0; border-bottom: 2px solid #EAE0D5;">
-                        <tr class="small text-muted fw-bold text-uppercase" style="letter-spacing: 0.5px;">
-                            <th class="ps-4 py-3 border-0">Date</th>
-                            <th class="text-center py-3 border-0">Type</th>
-                            <th class="py-3 border-0 mobile-hide">Details</th>
-                            <th class="text-end py-3 border-0">Amount (₹)</th>
-                            <th class="text-center pe-4 py-3 border-0 no-print">Action</th>
+            <div class="table-responsive bg-white">
+                <table class="table ent-table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">Date</th>
+                            <th class="text-center">Type</th>
+                            <th class="mobile-hide">Details</th>
+                            <th class="text-end">Amount (₹)</th>
+                            <th class="text-center pe-4 no-print">Action</th>
                         </tr>
                     </thead>
                     <tbody id="ledger-body">
@@ -128,310 +271,6 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-    <script>
-        let currentShopId = null;
-        let isAdmin = false;
-        let masterTransactions = [];
-
-        window.onload = async () => {
-            try {
-                const { data: userData, error: authError } = await supabaseClient.auth.getUser();
-                if (authError || !userData || !userData.user) return window.location.replace('index.html');
-
-                const { data: profile } = await supabaseClient.from('user_profiles').select('role, shop_id').eq('id', userData.user.id).single();
-                if (profile) {
-                    if (profile.role !== 'admin') return window.location.replace('dashboard.html');
-                    currentShopId = profile.shop_id;
-                    isAdmin = true;
-
-                    document.getElementById('admin-content').classList.remove('d-none');
-
-                    const now = new Date();
-                    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-                    const today = now.toISOString().split('T')[0];
-                    document.getElementById('filter-date-start').value = firstDay;
-                    document.getElementById('filter-date-end').value = today;
-
-                    await loadMasterLedgerData();
-                }
-            } catch (err) { console.error(err); }
-        };
-
-        async function loadMasterLedgerData() {
-            if (!currentShopId) return;
-
-            masterTransactions = [];
-            let dynamicVaultBalance = 0;
-
-            const { data: reserveLogs } = await supabaseClient.from('master_ledger_logs').select('*').eq('shop_id', currentShopId).order('created_at', { ascending: false });
-            
-            if (reserveLogs) {
-                reserveLogs.forEach(log => {
-                    // ERADICATE LEGACY SWEEPS
-                    const isLegacySweep = log.reference_note && log.reference_note.includes('Daily Cash Closing');
-                    if (isLegacySweep) return;
-
-                    const rawAmt = parseFloat(log.amount);
-                    dynamicVaultBalance += rawAmt;
-
-                    masterTransactions.push({
-                        id: log.id,
-                        rawDate: new Date(log.created_at),
-                        dateStr: new Date(log.created_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }),
-                        timeStr: new Date(log.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
-                        source: 'RESERVE',
-                        badge: 'CAPITAL',
-                        ref: log.reference_note || 'Manual Adjustment',
-                        isPositive: rawAmt >= 0,
-                        amount: Math.abs(rawAmt)
-                    });
-                });
-            }
-
-            const { data: dailyTxns } = await supabaseClient.from('daily_transactions').select('*').eq('shop_id', currentShopId);
-            
-            let dailyAggregates = {};
-
-            if (dailyTxns) {
-                dailyTxns.forEach(txn => {
-                    if (txn.payment_method !== 'CASH') return;
-
-                    // ERADICATE LEGACY SWEEPS
-                    const isLegacySweepExp = txn.reference_note && txn.reference_note.includes('Transferred to Master Vault');
-                    if (isLegacySweepExp) return;
-
-                    const dateKey = txn.created_at.split('T')[0];
-                    if (!dailyAggregates[dateKey]) dailyAggregates[dateKey] = { net: 0, dateRaw: new Date(dateKey + 'T12:00:00') };
-
-                    const amt = parseFloat(txn.amount);
-                    if (txn.transaction_type === 'INCOME') dailyAggregates[dateKey].net += amt;
-                    else if (txn.transaction_type === 'EXPENSE') dailyAggregates[dateKey].net -= amt;
-                });
-            }
-
-            // INJECT CONSOLIDATED DAILY NET ROWS
-            for (let dateKey in dailyAggregates) {
-                let netFlow = dailyAggregates[dateKey].net;
-                dynamicVaultBalance += netFlow;
-
-                if (netFlow !== 0) {
-                    masterTransactions.push({
-                        id: 'agg_' + dateKey,
-                        rawDate: dailyAggregates[dateKey].dateRaw,
-                        dateStr: new Date(dateKey).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }),
-                        timeStr: 'EOD Sync',
-                        source: 'DAILY',
-                        badge: 'FLOOR NET',
-                        ref: 'Daily Floor Cash Consolidation',
-                        isPositive: netFlow > 0,
-                        amount: Math.abs(netFlow),
-                        isGrouped: true
-                    });
-                }
-            }
-
-            // Fallback check: Sync DB display with perfect dynamic math
-            document.getElementById('vault-balance').innerText = dynamicVaultBalance.toFixed(2);
-
-            masterTransactions.sort((a, b) => b.rawDate - a.rawDate);
-            applyFilters();
-        }
-
-        function applyFilters() {
-            const sourceFilter = document.getElementById('ledger-source-filter').value;
-            const startDateStr = document.getElementById('filter-date-start').value;
-            const endDateStr = document.getElementById('filter-date-end').value;
-
-            let startTimestamp = startDateStr ? new Date(`${startDateStr}T00:00:00`).getTime() : null;
-            let endTimestamp = endDateStr ? new Date(`${endDateStr}T23:59:59.999`).getTime() : null;
-
-            let filtered = masterTransactions.filter(item => {
-                if (sourceFilter !== 'ALL' && item.source !== sourceFilter) return false;
-                const itemTime = item.rawDate.getTime();
-                if (startTimestamp && itemTime < startTimestamp) return false;
-                if (endTimestamp && itemTime > endTimestamp) return false;
-                return true;
-            });
-
-            renderTable(filtered);
-        }
-
-        function renderTable(data) {
-            const tbody = document.getElementById('ledger-body');
-            tbody.innerHTML = '';
-            document.getElementById('record-count').innerText = `${data.length} Records`;
-
-            if (data.length > 0) {
-                data.forEach(item => {
-                    const colorClass = item.isPositive ? 'text-success' : 'text-danger';
-                    const sign = item.isPositive ? '+' : '-';
-                    
-                    let badgeClass = 'bg-secondary-subtle text-secondary border-secondary-subtle';
-                    if (item.badge === 'CAPITAL') badgeClass = 'bg-gold-subtle text-gold border-gold';
-                    else if (item.badge === 'FLOOR NET') badgeClass = 'bg-dark text-white border-dark';
-
-                    let adminEditBtn = item.isGrouped ? `
-                        <td class="text-center pe-4 no-print align-middle"><span class="text-muted small">Auto-Synced</span></td>
-                    ` : `
-                        <td class="text-center pe-4 no-print align-middle">
-                            <div class="d-flex justify-content-center gap-2">
-                                <button class="action-btn text-dark" onclick="editTransaction('${item.id}', '${item.source}', ${item.amount}, ${item.isPositive})">Edit</button>
-                                <button class="action-btn text-danger" onclick="deleteTransaction('${item.id}', '${item.source}')">Del</button>
-                            </div>
-                        </td>
-                    `;
-
-                    tbody.innerHTML += `
-                        <tr style="transition: background 0.2s;" onmouseover="this.style.background='#FDFBF7'" onmouseout="this.style.background='transparent'">
-                            <td class="ps-4 py-3">
-                                <div class="fw-bold text-dark small">${item.dateStr}</div>
-                                <div class="text-muted mobile-hide" style="font-size: 0.75rem;">${item.timeStr}</div>
-                            </td>
-                            <td class="text-center py-3">
-                                <span class="badge border ${badgeClass} px-2 py-1" style="font-size: 0.65rem; letter-spacing: 0.5px;">${item.badge}</span>
-                            </td>
-                            <td class="py-3 fw-semibold text-dark mobile-hide" style="font-size: 0.9em;">${item.ref}</td>
-                            <td class="text-end py-3 fw-bold ${colorClass} fs-6">${sign} ₹ ${item.amount.toFixed(2)}</td>
-                            ${adminEditBtn}
-                        </tr>
-                    `;
-                });
-            } else {
-                tbody.innerHTML = `<tr><td colspan="5" class="empty-state">No transactions found matching filters.</td></tr>`;
-            }
-        }
-
-        async function editTransaction(id, source, absAmount, isPositive) {
-            const { value: newAmountStr } = await Swal.fire({
-                title: 'Modify Capital Amount',
-                input: 'number',
-                inputValue: absAmount,
-                showCancelButton: true,
-                confirmButtonColor: '#2C2C2C',
-                confirmButtonText: 'Update'
-            });
-
-            if (!newAmountStr) return; 
-            const newAbsAmount = parseFloat(newAmountStr);
-            if (isNaN(newAbsAmount) || newAbsAmount <= 0) return Swal.fire('Error', 'Invalid amount.', 'error');
-            if (newAbsAmount === absAmount) return; 
-
-            if (source === 'RESERVE') {
-                const newSignedAmount = isPositive ? newAbsAmount : -Math.abs(newAbsAmount);
-                const { error: updateErr } = await supabaseClient.from('master_ledger_logs').update({ amount: newSignedAmount }).eq('id', id);
-                if (updateErr) return Swal.fire('Database Error', updateErr.message, 'error');
-            }
-
-            Swal.fire({ title: 'Updated!', icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
-            await loadMasterLedgerData();
-        }
-
-        async function deleteTransaction(id, source) {
-            const result = await Swal.fire({
-                title: 'Wipe Record?',
-                text: "This action cannot be undone. Balances will self-correct automatically.",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#dc3545',
-                cancelButtonColor: '#2C2C2C',
-                confirmButtonText: 'Yes, Delete'
-            });
-
-            if (!result.isConfirmed) return;
-
-            if (source === 'RESERVE') {
-                const { error: delError } = await supabaseClient.from('master_ledger_logs').delete().eq('id', id);
-                if (delError) return Swal.fire('Error', delError.message, 'error');
-            }
-
-            Swal.fire({ title: 'Deleted', icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
-            await loadMasterLedgerData();
-        }
-
-        function getManualTimestamp(dateStr) {
-            const now = new Date();
-            const localString = `${dateStr}T${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-            return new Date(localString).toISOString(); 
-        }
-
-        async function openAddFundsModal() {
-            const defaultDate = document.getElementById('filter-date-end').value || new Date().toISOString().split('T')[0];
-            const { value: formValues } = await Swal.fire({
-                title: 'Manual Capital Deposit',
-                html: `
-                    <label class="field-label text-start px-1">Entry Date</label>
-                    <input id="swal-date" class="swal2-input form-control mb-3 fw-bold text-dark" type="date" value="${defaultDate}">
-                    <label class="field-label text-start px-1">Amount (₹)</label>
-                    <input id="swal-amt" class="swal2-input form-control mb-3 fw-bold text-success" type="number" placeholder="Required">
-                    <label class="field-label text-start px-1">Details / Ref</label>
-                    <input id="swal-note" class="swal2-input form-control" placeholder="Optional Note">
-                `,
-                focusConfirm: false,
-                showCancelButton: true,
-                confirmButtonText: 'Deposit Capital',
-                confirmButtonColor: '#10b981',
-                preConfirm: () => {
-                    const amount = parseFloat(document.getElementById('swal-amt').value);
-                    const dateVal = document.getElementById('swal-date').value;
-                    if (!amount || amount <= 0) { Swal.showValidationMessage('Enter a valid amount'); return false; }
-                    return { amount: amount, note: document.getElementById('swal-note').value || 'Manual Vault Deposit', dateVal: dateVal };
-                }
-            });
-
-            if (formValues) {
-                const submissionTime = getManualTimestamp(formValues.dateVal);
-                await supabaseClient.from('master_ledger_logs').insert([{ 
-                    shop_id: currentShopId, 
-                    transaction_type: 'DEPOSIT', 
-                    reference_note: formValues.note, 
-                    amount: formValues.amount,
-                    created_at: submissionTime 
-                }]);
-                
-                Swal.fire({ title: 'Success!', icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
-                await loadMasterLedgerData();
-            }
-        }
-
-        async function openWithdrawModal() {
-            const defaultDate = document.getElementById('filter-date-end').value || new Date().toISOString().split('T')[0];
-            const { value: formValues } = await Swal.fire({
-                title: 'Manual Capital Withdrawal',
-                html: `
-                    <label class="field-label text-start px-1">Entry Date</label>
-                    <input id="swal-date" class="swal2-input form-control mb-3 fw-bold text-dark" type="date" value="${defaultDate}">
-                    <label class="field-label text-start px-1">Amount (₹)</label>
-                    <input id="swal-amt" class="swal2-input form-control mb-3 fw-bold text-danger" type="number" placeholder="Required">
-                    <label class="field-label text-start px-1">Details / Ref</label>
-                    <input id="swal-note" class="swal2-input form-control" placeholder="Optional Note">
-                `,
-                focusConfirm: false,
-                showCancelButton: true,
-                confirmButtonText: 'Withdraw Capital',
-                confirmButtonColor: '#ef4444',
-                preConfirm: () => {
-                    const amount = parseFloat(document.getElementById('swal-amt').value);
-                    const dateVal = document.getElementById('swal-date').value;
-                    if (!amount || amount <= 0) { Swal.showValidationMessage('Enter a valid amount'); return false; }
-                    return { amount: amount, note: document.getElementById('swal-note').value || 'Manual Vault Withdrawal', dateVal: dateVal };
-                }
-            });
-
-            if (formValues) {
-                const submissionTime = getManualTimestamp(formValues.dateVal);
-                await supabaseClient.from('master_ledger_logs').insert([{ 
-                    shop_id: currentShopId, 
-                    transaction_type: 'WITHDRAWAL', 
-                    reference_note: formValues.note, 
-                    amount: -formValues.amount,
-                    created_at: submissionTime 
-                }]);
-                
-                Swal.fire({ title: 'Success!', icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
-                await loadMasterLedgerData();
-            }
-        }
-    </script>
+    <script src="master-ledger.js"></script>
 </body>
 </html>
