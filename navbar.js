@@ -1,5 +1,5 @@
-// navbar.js
-async function loadPremiumLayout() {
+// navbar.js — Enterprise Layout & Navigation Controller (v1.9.2)
+async function loadEnterpriseLayout() {
     if (document.getElementById('sys-sidebar')) return;
 
     try {
@@ -9,119 +9,373 @@ async function loadPremiumLayout() {
             return;
         }
 
-        const { data: profile } = await supabaseClient.from('user_profiles').select('role, shop_id').eq('id', userData.user.id).single();
+        const { data: profile } = await supabaseClient
+            .from('user_profiles')
+            .select('role, shop_id')
+            .eq('id', userData.user.id)
+            .single();
+
         const isAdmin = profile && profile.role === 'admin';
 
-        let shopName = "BEAUTY SPORTS"; 
+        let shopName = 'ENTERPRISE SHOP';
         if (profile && profile.shop_id) {
-            const { data: shop } = await supabaseClient.from('shops').select('name').eq('id', profile.shop_id).single();
-            if (shop && shop.name) shopName = shop.name;
+            const { data: shop } = await supabaseClient
+                .from('shops')
+                .select('name')
+                .eq('id', profile.shop_id)
+                .single();
+            if (shop && shop.name) shopName = shop.name.toUpperCase();
+        }
+
+        if (!document.getElementById('ent-font-css')) {
+            const font = document.createElement('link');
+            font.id = 'ent-font-css';
+            font.href = 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap';
+            font.rel = 'stylesheet';
+            document.head.appendChild(font);
         }
 
         if (!document.getElementById('bs-css')) {
-            const font = document.createElement('link'); font.href = 'https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800&display=swap'; font.rel = 'stylesheet'; document.head.appendChild(font);
-            const bs = document.createElement('link'); bs.id = 'bs-css'; bs.href = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css'; bs.rel = 'stylesheet'; document.head.appendChild(bs);
+            const bs = document.createElement('link');
+            bs.id = 'bs-css';
+            bs.href = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css';
+            bs.rel = 'stylesheet';
+            document.head.appendChild(bs);
         }
 
         const style = document.createElement('style');
         style.innerHTML = `
-            :root { --creme-bg: #FDFBF7; --sidebar-dark: #2C2C2C; --sidebar-hover: #383838; --accent-gold: #C5A059; --glass: rgba(253, 251, 247, 0.85); }
-            body { font-family: 'Public Sans', sans-serif !important; background-color: var(--creme-bg) !important; color: #3A3A3A; margin: 0 !important; overflow-x: hidden; }
+            :root {
+                --ent-bg: #f3f4f6;
+                --ent-surface: #ffffff;
+                --ent-border: #d1d5db;
+                --ent-border-light: #e5e7eb;
+                --ent-ink: #111827;
+                --ent-muted: #6b7280;
+                --ent-navy: #0f172a;
+                --ent-navy-hover: #1e293b;
+                --ent-danger: #dc2626;
+                --ent-success: #16a34a;
+            }
+
+            body {
+                font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
+                background-color: var(--ent-bg) !important;
+                color: var(--ent-ink);
+                margin: 0 !important;
+                overflow-x: hidden;
+                -webkit-font-smoothing: antialiased;
+            }
+
             ::-webkit-scrollbar { width: 8px; height: 8px; }
             ::-webkit-scrollbar-track { background: transparent; }
-            ::-webkit-scrollbar-thumb { background: #EAE0D5; border-radius: 10px; }
-            ::-webkit-scrollbar-thumb:hover { background: var(--accent-gold); }
-            
-            .sidebar { height: 100vh; width: 80px; position: fixed; top:0; left:0; background: var(--sidebar-dark); color: white; z-index: 1001; border-right: 1px solid rgba(255,255,255,0.05); box-shadow: 4px 0 20px rgba(0,0,0,0.05); transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); overflow-x: hidden; white-space: nowrap; }
-            .sidebar-brand { padding: 2rem 0; justify-content: center; font-weight: 800; letter-spacing: 1px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 1.15rem; display: flex; align-items: center; text-transform: uppercase; }
-            .sidebar-brand .brand-text { display: none; opacity: 0; transition: opacity 0.3s ease; margin-left: 10px; }
-            .sidebar-nav-link { color: rgba(255, 255, 255, 0.6); padding: 1.25rem 0; justify-content: center; transition: all 0.3s ease; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; border-left: 4px solid transparent; display: flex; align-items: center; text-decoration: none; }
-            .sidebar-nav-link svg { transition: all 0.3s ease; opacity: 0.7; min-width: 18px; }
-            .sidebar-nav-link .nav-text { display: none; opacity: 0; transition: opacity 0.3s ease; margin-left: 12px; }
-            .sidebar-nav-link:hover { color: white; background: var(--sidebar-hover); }
-            .sidebar-nav-link.active { color: white; background: var(--sidebar-hover); border-left: 4px solid var(--accent-gold); }
-            .sidebar-nav-link.active svg { opacity: 1; color: var(--accent-gold); }
+            ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+            ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-            body.sidebar-expanded .sidebar { width: 260px; }
-            body.sidebar-expanded .sidebar-brand { padding: 2rem 1.5rem; justify-content: flex-start; }
-            body.sidebar-expanded .sidebar-brand .brand-text { display: inline; opacity: 1; }
-            body.sidebar-expanded .sidebar-nav-link { padding: 1rem 1.5rem; justify-content: flex-start; }
+            /* --- Enterprise Sidebar --- */
+            .sidebar {
+                height: 100vh;
+                width: 68px;
+                position: fixed;
+                top: 0;
+                left: 0;
+                background: var(--ent-navy);
+                color: #ffffff;
+                z-index: 1001;
+                border-right: 1px solid #1e293b;
+                transition: width 0.2s ease, transform 0.2s ease;
+                overflow-x: hidden;
+                white-space: nowrap;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .sidebar-brand {
+                height: 60px;
+                padding: 0;
+                justify-content: center;
+                font-weight: 800;
+                letter-spacing: 0.04em;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+                font-size: 0.9rem;
+                display: flex;
+                align-items: center;
+                text-transform: uppercase;
+                color: #ffffff;
+            }
+
+            .sidebar-brand .brand-icon-box {
+                width: 34px;
+                height: 34px;
+                border-radius: 6px;
+                background: rgba(255, 255, 255, 0.1);
+                border: 1px solid rgba(255, 255, 255, 0.15);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+                color: #ffffff;
+            }
+
+            .sidebar-brand .brand-text {
+                display: none;
+                opacity: 0;
+                margin-left: 12px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .sidebar-nav-link {
+                color: #94a3b8;
+                padding: 14px 0;
+                justify-content: center;
+                font-size: 0.78rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                border-left: 3px solid transparent;
+                display: flex;
+                align-items: center;
+                text-decoration: none;
+                transition: background 0.15s ease, color 0.15s ease;
+            }
+
+            .sidebar-nav-link svg {
+                opacity: 0.8;
+                min-width: 18px;
+                flex-shrink: 0;
+            }
+
+            .sidebar-nav-link .nav-text {
+                display: none;
+                opacity: 0;
+                margin-left: 12px;
+            }
+
+            .sidebar-nav-link:hover {
+                color: #ffffff;
+                background: var(--ent-navy-hover);
+            }
+
+            .sidebar-nav-link.active {
+                color: #ffffff;
+                background: var(--ent-navy-hover);
+                border-left: 3px solid #ffffff;
+            }
+
+            .sidebar-nav-link.active svg {
+                opacity: 1;
+                color: #ffffff;
+            }
+
+            /* --- Expanded Desktop State --- */
+            body.sidebar-expanded .sidebar { width: 240px; }
+            body.sidebar-expanded .sidebar-brand { padding: 0 18px; justify-content: flex-start; }
+            body.sidebar-expanded .sidebar-brand .brand-text { display: inline-block; opacity: 1; }
+            body.sidebar-expanded .sidebar-nav-link { padding: 14px 20px; justify-content: flex-start; }
             body.sidebar-expanded .sidebar-nav-link .nav-text { display: inline; opacity: 1; }
-            body.sidebar-expanded .sidebar-nav-link:hover { transform: translateX(4px); }
 
-            .status-bar { margin-left: 80px; padding: 1.25rem 2.5rem; background: var(--glass); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(197, 160, 89, 0.2); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.02); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 999; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-            .main-content-wrapper { margin-left: 80px; padding: 2.5rem; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-            body.sidebar-expanded .status-bar, body.sidebar-expanded .main-content-wrapper { margin-left: 260px; }
+            /* --- Top Status Bar --- */
+            .status-bar {
+                height: 60px;
+                margin-left: 68px;
+                padding: 0 24px;
+                background: var(--ent-surface);
+                border-bottom: 1px solid var(--ent-border);
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                position: sticky;
+                top: 0;
+                z-index: 999;
+                transition: margin-left 0.2s ease;
+            }
 
-            .btn-outline-danger { border-color: #dc3545; color: #dc3545; }
-            .btn-outline-danger:hover { background-color: #dc3545; color: white; }
+            .main-content-wrapper {
+                margin-left: 68px;
+                padding: 24px;
+                transition: margin-left 0.2s ease;
+            }
 
-            .mobile-toggle-btn { display: inline-flex; align-items: center; justify-content: center; background: transparent; border: none; color: #2C2C2C; padding: 5px; cursor: pointer; border-radius: 6px; transition: 0.2s; }
-            .mobile-toggle-btn:hover { background: rgba(0,0,0,0.05); }
-            .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s; }
-            .sidebar-overlay.active { opacity: 1; visibility: visible; }
+            body.sidebar-expanded .status-bar,
+            body.sidebar-expanded .main-content-wrapper {
+                margin-left: 240px;
+            }
+
+            .nav-toggle-btn {
+                width: 34px;
+                height: 34px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                background: var(--ent-surface);
+                border: 1px solid var(--ent-border);
+                color: var(--ent-ink);
+                cursor: pointer;
+                border-radius: 4px;
+            }
+            .nav-toggle-btn:hover { background: var(--ent-bg); }
+
+            .status-shop-title {
+                font-size: 0.82rem;
+                font-weight: 800;
+                letter-spacing: 0.04em;
+                color: var(--ent-ink);
+                text-transform: uppercase;
+                margin: 0;
+            }
+
+            .sys-badge {
+                font-size: 0.65rem;
+                font-weight: 800;
+                letter-spacing: 0.06em;
+                text-transform: uppercase;
+                padding: 3px 8px;
+                border-radius: 3px;
+                border: 1px solid var(--ent-border);
+            }
+            .sys-badge-admin {
+                background: #fef2f2;
+                color: var(--ent-danger);
+                border-color: #fecaca;
+            }
+            .sys-badge-staff {
+                background: #ecfdf3;
+                color: var(--ent-success);
+                border-color: #bbf7d0;
+            }
+            .sys-badge-version {
+                background: var(--ent-bg);
+                color: var(--ent-muted);
+                font-variant-numeric: tabular-nums;
+            }
+
+            .btn-sys-logout {
+                font-size: 0.72rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                padding: 6px 12px;
+                border-radius: 4px;
+                border: 1px solid var(--ent-border);
+                background: var(--ent-surface);
+                color: var(--ent-danger);
+            }
+            .btn-sys-logout:hover {
+                background: #fef2f2;
+                border-color: var(--ent-danger);
+            }
+
+            .sidebar-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: rgba(15, 23, 42, 0.55);
+                z-index: 1000;
+                opacity: 0;
+                visibility: hidden;
+                transition: opacity 0.2s ease, visibility 0.2s;
+            }
+            .sidebar-overlay.active {
+                opacity: 1;
+                visibility: visible;
+            }
 
             @media (max-width: 768px) {
-                .sidebar { transform: translateX(-100%); width: 260px; }
-                .sidebar-brand { padding: 2rem 1.5rem; justify-content: flex-start; }
-                .sidebar-brand .brand-text { display: inline; opacity: 1; }
-                .sidebar-nav-link { padding: 1rem 1.5rem; justify-content: flex-start; }
+                .sidebar { transform: translateX(-100%); width: 240px; }
+                .sidebar-brand { padding: 0 18px; justify-content: flex-start; }
+                .sidebar-brand .brand-text { display: inline-block; opacity: 1; }
+                .sidebar-nav-link { padding: 14px 20px; justify-content: flex-start; }
                 .sidebar-nav-link .nav-text { display: inline; opacity: 1; }
                 body.sidebar-mobile-open .sidebar { transform: translateX(0); }
                 .status-bar, .main-content-wrapper { margin-left: 0 !important; }
-                .status-bar { padding: 1rem; }
-                .main-content-wrapper { padding: 1.5rem 1rem; }
+                .status-bar { padding: 0 14px; }
+                .main-content-wrapper { padding: 16px 12px; }
             }
         `;
         document.head.appendChild(style);
 
+        // Restore desktop sidebar state
+        if (window.innerWidth > 768 && localStorage.getItem('ent-sidebar-expanded') === 'true') {
+            document.body.classList.add('sidebar-expanded');
+        }
+
         const currentPage = window.location.pathname.split('/').pop() || 'dashboard.html';
-        const todayStr = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+        const todayStr = new Date().toLocaleDateString('en-IN', {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+        });
 
         const sidebar = document.createElement('div');
         sidebar.id = 'sys-sidebar';
         sidebar.className = 'sidebar';
-        
+
         let navLinks = `
-            <a class="sidebar-nav-link ${currentPage === 'dashboard.html' || currentPage === '' ? 'active' : ''}" href="dashboard.html" title="Dashboard">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-                <span class="nav-text">Dashboard</span>
+            <a class="sidebar-nav-link ${currentPage === 'dashboard.html' || currentPage === '' ? 'active' : ''}" href="dashboard.html" title="Daybook Terminal">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+                <span class="nav-text">Daybook</span>
             </a>
         `;
 
         if (isAdmin) {
             navLinks += `
-                <a class="sidebar-nav-link ${currentPage === 'master-ledger.html' ? 'active' : ''}" href="master-ledger.html" title="Master Vault">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                <a class="sidebar-nav-link ${currentPage === 'master-ledger.html' ? 'active' : ''}" href="master-ledger.html" title="Unified Cash Ledger">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                    </svg>
                     <span class="nav-text">Master Vault</span>
                 </a>
-                <a class="sidebar-nav-link ${currentPage === 'accounts.html' ? 'active' : ''}" href="accounts.html" title="Entity Accounts">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                <a class="sidebar-nav-link ${currentPage === 'accounts.html' ? 'active' : ''}" href="accounts.html" title="Accounts & Passbooks">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+                        <line x1="2" y1="10" x2="22" y2="10"></line>
+                    </svg>
                     <span class="nav-text">Accounts</span>
                 </a>
-                <a class="sidebar-nav-link ${currentPage === 'staff.html' ? 'active' : ''}" href="staff.html" title="Staff Management">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                    <span class="nav-text">Staff</span>
+                <a class="sidebar-nav-link ${currentPage === 'staff.html' ? 'active' : ''}" href="staff.html" title="Staff & Attendance">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    <span class="nav-text">Staff Roster</span>
                 </a>
                 <a class="sidebar-nav-link ${currentPage === 'summary.html' ? 'active' : ''}" href="summary.html" title="Business Analytics">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
                     <span class="nav-text">Analytics</span>
                 </a>
             `;
         }
 
-        let shopNameArr = shopName.split(' ');
-        let firstWord = shopNameArr[0] || '';
-        let restWords = shopNameArr.slice(1).join(' ') || '';
-
+        // Storefront / Retail Shop SVG Icon
         sidebar.innerHTML = `
-            <div class="sidebar-brand">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent-gold)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="min-width: 24px;">
-                    <path d="M20.2 7.8l-7.7 7.7-4-4-5.7 5.7"/><path d="M15 7h6v6"/>
-                </svg>
-                <span class="brand-text"><span style="color: var(--accent-gold)">${firstWord}</span> ${restWords}</span>
+            <div class="sidebar-brand" title="${shopName}">
+                <div class="brand-icon-box">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 9l1.5-5h15L21 9"></path>
+                        <path d="M3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"></path>
+                        <path d="M5 12v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8"></path>
+                        <path d="M10 15h4v7h-4z"></path>
+                    </svg>
+                </div>
+                <span class="brand-text">${shopName}</span>
             </div>
-            <nav class="nav flex-column mt-4">${navLinks}</nav>
+            <nav class="nav flex-column mt-2">${navLinks}</nav>
         `;
         document.body.prepend(sidebar);
 
@@ -132,40 +386,48 @@ async function loadPremiumLayout() {
 
         const statusBar = document.createElement('div');
         statusBar.className = 'status-bar';
-        
-        let badgeHtml = isAdmin 
-            ? `<span class="badge bg-danger text-white px-3 py-2 rounded-pill fw-bold shadow-sm d-none d-md-inline-block" style="font-size: 0.65rem; letter-spacing: 1px;">ADMIN ACTIVE</span>`
-            : `<span class="badge bg-success text-white px-3 py-2 rounded-pill fw-bold shadow-sm d-none d-md-inline-block" style="font-size: 0.65rem; letter-spacing: 1px;">STANDARD MODE</span>`;
 
-        // INJECT VERSION BADGE IF AVAILABLE
-        const versionBadge = window.APP_VERSION 
-            ? `<span class="badge border border-secondary text-secondary ms-2 px-2 py-1 fw-bold rounded-2" style="font-size: 0.65rem; background: rgba(0,0,0,0.03);">${window.APP_VERSION}</span>` 
-            : '';
+        const roleBadgeHtml = isAdmin
+            ? `<span class="sys-badge sys-badge-admin d-none d-md-inline-block">Admin Active</span>`
+            : `<span class="sys-badge sys-badge-staff d-none d-md-inline-block">Staff Mode</span>`;
+
+        const appVer = window.APP_VERSION || 'v1.9.2';
+        const versionBadge = `<span class="sys-badge sys-badge-version d-none d-sm-inline-block">${appVer}</span>`;
 
         statusBar.innerHTML = `
             <div class="d-flex align-items-center gap-2">
-                <button id="mobile-menu-btn" class="mobile-toggle-btn me-2">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                <button id="mobile-menu-btn" class="nav-toggle-btn" title="Toggle Navigation">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
                 </button>
-                ${badgeHtml}
+                <span class="status-shop-title ms-1">${shopName}</span>
+                ${roleBadgeHtml}
                 ${versionBadge}
             </div>
             <div class="d-flex align-items-center gap-3">
-                <span class="small fw-bold text-muted text-uppercase d-none d-sm-inline" style="letter-spacing: 1px;">${todayStr}</span>
-                <button id="sys-logout-btn" class="btn btn-sm btn-outline-danger fw-bold rounded-pill px-4 shadow-sm" style="background: transparent;">LOGOUT</button>
+                <span class="small fw-bold text-muted text-uppercase d-none d-md-inline" style="font-size: 0.72rem; letter-spacing: 0.05em;">${todayStr}</span>
+                <button id="sys-logout-btn" class="btn-sys-logout">Logout</button>
             </div>
         `;
-        
+
         const mainContent = document.querySelector('main');
-        if(mainContent) {
+        if (mainContent) {
             mainContent.classList.remove('main-content');
             mainContent.classList.add('main-content-wrapper');
             sidebar.insertAdjacentElement('afterend', statusBar);
         }
 
         document.getElementById('mobile-menu-btn').addEventListener('click', () => {
-            if (window.innerWidth > 768) document.body.classList.toggle('sidebar-expanded');
-            else { document.body.classList.add('sidebar-mobile-open'); overlay.classList.add('active'); }
+            if (window.innerWidth > 768) {
+                const isExpanded = document.body.classList.toggle('sidebar-expanded');
+                localStorage.setItem('ent-sidebar-expanded', isExpanded ? 'true' : 'false');
+            } else {
+                document.body.classList.add('sidebar-mobile-open');
+                overlay.classList.add('active');
+            }
         });
 
         overlay.addEventListener('click', () => {
@@ -183,13 +445,25 @@ async function loadPremiumLayout() {
         });
 
         document.getElementById('sys-logout-btn').addEventListener('click', async () => {
-            document.getElementById('sys-logout-btn').innerText = 'Exiting...';
-            try { await supabaseClient.auth.signOut(); } catch(e) {} 
-            finally { window.location.replace('index.html'); }
+            const btn = document.getElementById('sys-logout-btn');
+            btn.innerText = 'Exiting...';
+            btn.disabled = true;
+            try {
+                await supabaseClient.auth.signOut();
+            } catch (e) {
+                console.error(e);
+            } finally {
+                window.location.replace('index.html');
+            }
         });
 
-    } catch (error) { console.error("Layout failed to load:", error); }
+    } catch (error) {
+        console.error('Layout failed to load:', error);
+    }
 }
 
-if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', loadPremiumLayout); } 
-else { loadPremiumLayout(); }
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadEnterpriseLayout);
+} else {
+    loadEnterpriseLayout();
+}
